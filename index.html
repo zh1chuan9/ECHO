@@ -127,9 +127,11 @@
 
   .abyss{fill:url(#pitGrad)}
   .slab-g{fill:#0b1219}
-  .slab-f{fill:#0c141d}
-  .edge{stroke:#4a5e74;stroke-width:2;opacity:.45}
-  .edge-dim{stroke:#42556a;stroke-width:2;opacity:.22}
+  /* 悬空/独立地形整块描边：背景废墟（#0c141e 系）与地形填充几乎是同一个色，只靠填充分不开，
+     所以给独立地形加一圈更深更厚的轮廓，把它从背景里"抠"出来 */
+  .slab-f{fill:#0c141d;stroke:#2c4356;stroke-width:3.4}
+  .edge{stroke:#3a5c7c;stroke-width:3.6;opacity:.95}      /* 受光的顶边：加深加厚 */
+  .edge-dim{stroke:#233849;stroke-width:3;opacity:.62}    /* 背光的底边 / 沟壁 */
 
   .cp-post{stroke:rgba(190,215,245,.26);stroke-width:2}
   /* 出生点立柱只在开场"卡住"阶段当提示的杆子出现：落地的瞬间浮现，挣脱的瞬间消失 */
@@ -163,9 +165,14 @@
     100%{transform:translate(calc(var(--x) + var(--dx)),calc(var(--y) + var(--dy)));opacity:0}
   }
 
-  /* 掉进虚空：粒子爆炸 + 冲击环 */
+  /* 掉进虚空：粒子爆炸 + 冲击环；黄球被引爆时用同一套粒子、换成暖黄配色 */
   .fx-p circle{fill:#fff}
   .fx-ring{fill:none;stroke:#eaf4ff;stroke-width:2}
+  .fx-p.orb circle{fill:#f6dc96}
+  .fx-ring.orb{stroke:#f6dc96}
+  /* 死亡爆炸：同一套粒子，粒子更密、冲击环更宽更亮，读起来是"炸开"而不是"爆散" */
+  .fx-p.death circle{fill:#f8fbff}
+  .fx-ring.death{stroke:#f4faff;stroke-width:2.6}
 
   /* 终点信标（无文字）：柔光晕 + 缓转的虚线外环 + 对位刻度 + 核心亮点 + 柱内缓升光点 */
   .goal-beam{fill:url(#goalGrad)}
@@ -202,6 +209,30 @@
   .up-eye{display:none}
   #hero[data-face="up"] .eye-wrap{display:none}
   #hero[data-face="up"] .up-eye{display:block}
+  /* 微表情：冲刺时眯眼咬牙、从高处急坠时瞪圆眼张大嘴。
+     和"晕眩/朝上"同一套做法 —— 每种表情是一组独立元素，靠 #hero 的 data-mood 切换显隐，
+     所以既不会和朝向/眨眼的 transform 打架，也不会被眨眼动画盖掉 */
+  .mood-eye,.mood-mouth{display:none}
+  .hero-eye-slit{fill:#0b1219}
+  .hero-eye-wide{fill:#0b1219}
+  .hero-glint{fill:#f2f6fb}
+  .hero-mouth{fill:none;stroke:#0b1219;stroke-width:1.9;stroke-linecap:round}
+  .hero-mouth-open{fill:#0b1219}
+  /* 冲刺：眯眼 + 咬牙 */
+  #hero[data-mood="dash"] .eye-wrap{display:none}
+  #hero[data-mood="dash"] .mood-eye,
+  #hero[data-mood="dash"] .mood-mouth{display:block}
+  #hero[data-mood="dash"] .hero-eye-wide,
+  #hero[data-mood="dash"] .hero-glint,
+  #hero[data-mood="dash"] .hero-mouth-open{display:none}
+  /* 急坠：瞪圆 + 张嘴 */
+  #hero[data-mood="fall"] .eye-wrap{display:none}
+  #hero[data-mood="fall"] .mood-eye,
+  #hero[data-mood="fall"] .mood-mouth{display:block}
+  #hero[data-mood="fall"] .hero-eye-slit,
+  #hero[data-mood="fall"] .hero-mouth{display:none}
+  /* 晕眩（挣脱过场）优先级最高：X 眼期间不叠任何表情 */
+  #hero.dizzy .mood-eye,#hero.dizzy .mood-mouth{display:none}
   /* 石块层：静置一段时间后整体淡出 */
   #stones{transition:opacity .8s ease}
   #stones.stones-fade{opacity:0}
@@ -244,22 +275,16 @@
     margin-right:-.34em;                 /* 抵消字距留在末尾的空隙，让文字真正对齐竖线 */
     color:var(--ink);text-shadow:0 0 12px rgba(200,225,255,.45);white-space:nowrap}
   @keyframes hintPulse{0%,100%{opacity:.6}50%{opacity:1}}
+  /* 祭坛上的 PRESS E：比过场里的 PRESS SPACE 明显更大，方便一眼看见 */
+  .lead-big .lead-txt{font-size:17px;letter-spacing:.36em;margin-right:-.36em;
+    text-shadow:0 0 22px rgba(200,225,255,.75), 0 0 6px rgba(226,240,255,.55)}
 
   .hud{position:fixed;left:5.2%;top:4.6%;z-index:20;display:none;
     flex-direction:column;gap:8px;pointer-events:none}
   body.playing .hud{display:flex}
+  body.playing.chal .hud{display:none}                       /* 挑战模式用自己的记分条，别把剧情的存档/时间行叠上去 */
   .hud span{font-size:10px;letter-spacing:.3em;color:rgba(188,212,240,.42);white-space:nowrap}
   .hud b{font-weight:300;color:rgba(222,234,248,.72)}
-
-  /* 二段跳冷却条：习得后出现在左下角；条满=可用，用掉后 0.5s 回填 */
-  .dj-bar{position:fixed;left:5.2%;bottom:6.4%;z-index:20;display:none;
-    flex-direction:column;gap:6px;pointer-events:none;opacity:0;transition:opacity .5s ease}
-  body.playing.dj .dj-bar{display:flex}
-  .dj-bar.show{opacity:1}
-  .dj-label{font-size:9px;letter-spacing:.34em;color:rgba(188,212,240,.42);white-space:nowrap}
-  .dj-track{width:86px;height:2px;background:rgba(188,212,240,.16)}
-  .dj-track i{display:block;height:100%;width:100%;background:#eaf4ff;
-    box-shadow:0 0 8px rgba(200,225,255,.55)}
 
   /* 习得提示：固定在屏幕正中的一行字 */
   .learn-tag{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:41;
@@ -273,10 +298,31 @@
     pointer-events:none;transition:opacity .22s ease}
   .whiteout.on{opacity:1}
 
-  /* 终点大门：门扇开启时向上收进楣石 */
-  .gate-door{fill:#05080d;transform-box:fill-box;transform-origin:50% 0;
+  /* 终点拱门：门洞是半圆券顶，描线语言与终点信标一致——细亮线券框、沿券弧缓流的虚线、
+     对位刻度、门内缓升浮光。门扇（如有）开启时整体向上收起，露出门内的深色通道。 */
+  .gate-passage{fill:#05080d}
+  .gate-halo{fill:url(#goalGlow)}
+  .gate-frame{fill:none;stroke:rgba(200,225,255,.28);stroke-width:2.2}
+  .gate-frame-in{fill:none;stroke:rgba(200,225,255,.1);stroke-width:1.2}
+  .gate-dash{fill:none;stroke:rgba(200,225,255,.2);stroke-width:1.6;
+    stroke-dasharray:3 9;stroke-linecap:round;animation:gateFlow 9s linear infinite}
+  @keyframes gateFlow{to{stroke-dashoffset:-48}}
+  .gate-tick{stroke:rgba(200,225,255,.24);stroke-width:1.6;stroke-linecap:round}
+  .gate-core{fill:#eaf4ff;opacity:.35}
+  /* 门扇：暗色石板，一道对缝 + 两道石线，让它读起来是"门"而不是一块黑 */
+  .gate-door{transform-box:fill-box;transform-origin:50% 0;
     transition:transform .9s cubic-bezier(.22,.8,.3,1)}
+  .gate-door-slab{fill:#0e1a25}
+  .gate-door-seam{stroke:rgba(200,225,255,.16);stroke-width:1.4}
+  .gate-mote{display:none}
+  /* 开启：门扇收起、券框亮起并轻脉动、门内浮光透出 */
   .gate.open .gate-door{transform:scaleY(0)}
+  .gate.open .gate-frame{stroke:rgba(200,225,255,.5);animation:cpPulse 1.5s ease-in-out infinite}
+  .gate.open .gate-frame-in{stroke:rgba(200,225,255,.16)}
+  .gate.open .gate-dash{stroke:rgba(200,225,255,.42)}
+  .gate.open .gate-tick{stroke:rgba(200,225,255,.45)}
+  .gate.open .gate-core{opacity:1}
+  .gate.open .gate-mote{display:block}
 
   .fade.quick{transition-duration:.18s}
 
@@ -297,11 +343,21 @@
     .intro-hint.show{animation:none;opacity:1}
     .lead.show{animation:none;opacity:1}
     .cp.lit .cp-flash{animation:none}
+    .cdown-num.pop{animation:none;opacity:1;transform:none}
     .cp.on .cp-p{display:none}
+    .sumwin-card{transition:none}
+    .chint{animation:none}
     .goal-spin{animation:none}
-    .goal-mote{display:none}
+    .goal-mote,.gate.open .gate-mote{display:none}
+    .gate-dash{animation:none}
     .whiteout.on{opacity:.55}
     .item.knock .ind svg,.item.knock .ind .tick{animation:none}
+    /* 挑战模式：吸积弧、吸力虚线、螺旋碎屑、危险脉动与碎裂坠落一并停掉 */
+    .orb-spin,.orb-dot,.hole-pull,.hole-mote{animation:none}
+    .danger.on{animation:none;opacity:.4}
+    .crumble.fall .slab-f,.crumble.fall .edge{animation:none;opacity:.22}
+    /* 拾取球的呼吸浮动、拾取火花、冲刺残影与速度线也一并停掉（火花仍会短暂闪一下再被回收） */
+    .pick-bob,.pick-spin,.spark-ring,.spark-star,.ghost-body,.dash-streak{animation:none}
   }
 
   /* ---------- title ---------- */
@@ -335,9 +391,11 @@
   }
   .item:nth-child(1){margin-left:0}
   .item:nth-child(2){margin-left:22px}
-  .item:nth-child(3){margin-left:58px}
-  .item:nth-child(4){margin-left:94px}
-  .item:nth-child(5){margin-left:130px}
+  .item:nth-child(3){margin-left:44px}
+  .item:nth-child(4){margin-left:66px}
+  /* 末尾两项走更陡的一档：ABOUT / EXIT 各自再向右探出一些，让最后两行比上面的走向更明显地斜出去 */
+  .item:nth-child(5){margin-left:100px}
+  .item:nth-child(6){margin-left:134px}
   .item:hover,.item.active{color:#ffffff;text-shadow:0 0 12px rgba(200,225,255,.45)}
   .item:focus{outline:none}
   /* 鼠标悬停向右偏移一点，按下再多一点 */
@@ -385,6 +443,51 @@
     font-size:10px;letter-spacing:.3em}
   .fade-stats .row b{font-weight:300;color:rgba(188,212,240,.34)}
   .fade-stats .row i{font-style:normal;color:rgba(222,234,248,.8)}
+  /* 关卡结算的两枚按钮：沿用面板里的 .btn 语言，默认不出现（换关的黑幕上不该有按钮） */
+  .fade-acts{display:none;gap:14px;margin-top:24px}
+  .fade-acts.show{display:flex}
+  .fade-foot{display:none;gap:20px;margin-top:16px;font-size:10px;letter-spacing:.22em;
+    color:rgba(186,212,240,.34)}
+  .fade-foot.show{display:flex}
+  .fade-foot b{font-weight:400;color:rgba(216,236,255,.62)}
+
+  /* ---------- 结算窗口 ---------- */
+  /* 死亡爆炸（或通关）演完后再"弹"出来的居中弹窗。沿用面板的底色/描边/四角括号语言；
+     黑色幕布 #fade 不再承担结算职责，只留给换关、载入这类转场 */
+  .sumwin{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .3s ease}
+  .sumwin.on{opacity:1;pointer-events:auto}
+  .sumwin-veil{position:absolute;inset:0;
+    background:radial-gradient(130% 100% at 50% 44%, rgba(8,13,20,.42) 0%, rgba(4,7,11,.82) 100%);
+    -webkit-backdrop-filter:blur(7px) saturate(.85);
+            backdrop-filter:blur(7px) saturate(.85)}
+  .sumwin-card{position:relative;display:flex;flex-direction:column;align-items:center;
+    width:clamp(300px,42vw,520px);padding:30px 40px 22px;
+    background:linear-gradient(158deg, rgba(22,32,45,.86), rgba(9,15,23,.94));
+    border:1px solid rgba(160,190,225,.16);
+    box-shadow:0 36px 100px rgba(0,0,0,.62), 0 0 80px rgba(115,155,208,.1),
+      inset 0 1px 0 rgba(215,235,255,.06);
+    transform:scale(.92);opacity:0;
+    transition:transform .5s cubic-bezier(.22,.8,.3,1), opacity .38s ease}
+  .sumwin.on .sumwin-card{transform:none;opacity:1}
+  /* 四角括号（与面板 .panel-frame 同一套描线） */
+  .sumwin-card::after{content:'';position:absolute;inset:9px;pointer-events:none;opacity:0;
+    transition:opacity .4s ease .12s;
+    background:
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left top/16px 1px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left top/1px 16px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right top/16px 1px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right top/1px 16px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left bottom/16px 1px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left bottom/1px 16px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right bottom/16px 1px no-repeat,
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right bottom/1px 16px no-repeat}
+  .sumwin.on .sumwin-card::after{opacity:.5}
+  .sumwin-msg{font-size:13px;letter-spacing:.5em;color:rgba(226,238,250,.7);white-space:nowrap}
+  .sumwin-sub{margin-top:7px;font-size:10px;letter-spacing:.3em;color:rgba(188,212,240,.34);white-space:nowrap}
+  /* 弹结算窗时世界仍留在原地当背景（body.playing 不摘），但两套 HUD 与危险暗角要收掉。
+     用 id 选择器压过 body.playing / body.playing.chal 的 class 规则，与书写顺序无关 */
+  body.sum #hud,body.sum #chud,body.sum #cdBar,body.sum #chint,body.sum #danger{display:none}
 
   /* ---------- overlay : saves / settings / confirm ---------- */
   .overlay{
@@ -540,6 +643,9 @@
   .btn:hover,.btn.on{color:#fff;border-color:rgba(196,222,252,.42);background:rgba(160,196,236,.1);box-shadow:0 0 24px rgba(130,170,222,.2)}
   .btn.primary{color:#e8f1fb;border-color:rgba(180,210,246,.34);background:rgba(160,196,236,.08)}
   .btn:active{transform:translateX(1px)}
+  /* 暂停面板：三个动作竖排、各占一行，和主菜单的纵向列表是同一套气质 */
+  .p-stack{display:flex;flex-direction:column;gap:9px;margin-top:18px}
+  .p-stack .btn{width:100%}
   .c-desc{font-size:12.5px;line-height:1.9;letter-spacing:.14em;color:rgba(214,230,246,.78)}
 
   /* about : 版本信息表 */
@@ -550,6 +656,193 @@
   .a-v{font-size:14px;letter-spacing:.16em;color:var(--ink)}
   .p-foot{display:flex;gap:20px;margin-top:14px;font-size:10px;letter-spacing:.22em;color:rgba(186,212,240,.34)}
   .p-foot b{font-weight:400;color:rgba(216,236,255,.62)}
+
+  /* ---------- 挑战模式：黄球 / 抓钩 / 黑洞 / 记分 ---------- */
+  /* 黄球：唯一能被抓钩勾住的东西，用暖黄把它从蓝白场景里单拎出来 */
+  .orb-halo{fill:url(#orbGlow)}
+  .orb-core{fill:#10141a}
+  .orb-ring{fill:none;stroke:rgba(246,220,150,.8);stroke-width:2.4}
+  .orb-dash{fill:none;stroke:rgba(246,220,150,.34);stroke-width:1.4;
+    stroke-dasharray:3 9;stroke-linecap:round}
+  .orb-spin{transform-box:fill-box;transform-origin:center;animation:goalSpin 14s linear infinite}
+  .orb-dot{fill:#f6dc96;animation:cpPulse 2.6s ease-in-out infinite}
+  /* 可视射程圈：靠近了才渐显，走进圈里就能勾（半径 = 这颗球自己的 range） */
+  .orb-range{fill:none;stroke:rgba(246,220,150,.24);stroke-width:1.2;
+    stroke-dasharray:7 11;stroke-linecap:round}
+  /* 抓钩缆绳：从主角伸向黄球，勾住时绳端亮起一个抓取点 */
+  .rope{stroke:rgba(246,220,150,.55);stroke-width:1.8;stroke-linecap:round}
+  .rope.hot{stroke:rgba(246,220,150,.9)}
+  .rope-end{fill:#f6dc96}
+  /* 拾取球：白球（+100）与金球（+150，并开启 10 秒"得分 ×1.5"窗口）。
+     都用常亮的呼吸光晕 + 一圈缓转的刻度表示"这是能捡的东西"，白球冷白、金球亮金 */
+  .pick-halo{fill:url(#pickGlow)}
+  .pick-ring{fill:none;stroke:rgba(226,240,255,.7);stroke-width:1.6}
+  .pick-core{fill:#eaf4ff}
+  .pick-tick{fill:none;stroke:rgba(226,240,255,.42);stroke-width:1.2;
+    stroke-dasharray:3 9;stroke-linecap:round}
+  .pick-spin{transform-box:fill-box;transform-origin:center;animation:goalSpin 9s linear infinite}
+  /* 呼吸浮动只能挂在子节点上：分组身上已经有一个 svg transform 属性（世界坐标定位），
+     再在它上面叠 CSS transform 会被 CSS 盖掉，球会瞬移到原点 */
+  .pick-bob{animation:pickBob 2.4s ease-in-out infinite}
+  @keyframes pickBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  .pick.g .pick-halo{fill:url(#goldGlow)}
+  .pick.g .pick-ring{stroke:rgba(255,215,122,.85)}
+  .pick.g .pick-core{fill:#ffd77a}
+  .pick.g .pick-tick{stroke:rgba(255,215,122,.52)}
+  /* 拾取与冲刺的短命火花：自成一层（gSpark），和爆散粒子层分开，互不打断，
+     演完由 JS 按寿命回收 */
+  .spark-ring{fill:none;stroke:rgba(214,232,255,.85);stroke-width:1.6;
+    transform-box:fill-box;transform-origin:center;
+    animation:sparkRing .46s cubic-bezier(.2,.8,.3,1) both}
+  .spark-star{fill:#fff;transform-box:fill-box;transform-origin:center;
+    animation:sparkStar .5s cubic-bezier(.2,.8,.3,1) both}
+  .spark-ring.g{stroke:rgba(255,215,122,.9)}
+  .spark-star.g{fill:#ffe6a8}
+  @keyframes sparkRing{from{transform:scale(.35);opacity:.95}to{transform:scale(2.6);opacity:0}}
+  @keyframes sparkStar{from{transform:scale(.4) rotate(0);opacity:1}to{transform:scale(1.9) rotate(120deg);opacity:0}}
+  /* DASH 冲刺：起步瞬间在身后撒下三枚残影（位置按冲刺速度预先排好，各自延迟到主角跑过那里才显形）
+    与几道向后甩出的速度线 */
+  .ghost-body{fill:#eaf4ff;transform-box:fill-box;transform-origin:center;
+    animation:ghostFade .38s cubic-bezier(.2,.8,.3,1) both}
+  @keyframes ghostFade{
+    0%{opacity:.4;transform:scaleX(1.02)}
+    100%{opacity:0;transform:scaleX(1.75) scaleY(1.05)}}
+  .dash-streak{stroke:rgba(226,240,255,.6);stroke-width:1.7;stroke-linecap:round;
+    animation:dashStreakR .34s cubic-bezier(.2,.75,.3,1) both}
+  .dash-streak.l{animation-name:dashStreakL}
+  @keyframes dashStreakR{from{transform:translateX(0);opacity:.65}to{transform:translateX(-58px);opacity:0}}
+  @keyframes dashStreakL{from{transform:translateX(0);opacity:.65}to{transform:translateX(58px);opacity:0}}
+  /* 黑洞：一个浑圆的视界（下缘正好切在地面线上）+ 周围被扯弯的时空。
+     "畸变"是靠离线生成的极坐标路径做出来的：环的轮廓本身带两段不同频率的晃动，
+     再让内外两条环反向缓转，看上去就像周围的空间一直在被拉扯、翻搅；
+     外面再叠一圈流动的吸力虚线、一圈引力透镜亮环，以及一路螺旋内吸的碎屑 */
+  .hole-glow{fill:url(#holeGlow)}
+  .hole-disc{fill:#04060a}
+  .hole-core{fill:#000}
+  .hole-lens{fill:none;stroke:url(#holeEdge);stroke-width:2.2}
+  .hole-lens2{fill:none;stroke:rgba(214,232,255,.1);stroke-width:1.1}
+  /* 被拽弯的时空环：轮廓本身带晃动（离线生成的极坐标路径），
+     缓转由 JS 写 rotate 属性驱动 —— 明确绕视界圆心转，不依赖不规则轮廓的包围盒 */
+  .hole-warp{fill:none;stroke:url(#holeEdge);stroke-width:1.5;opacity:.5;
+    stroke-dasharray:46 7 24 12;stroke-linecap:round}
+  .hole-warp.b{stroke:rgba(214,232,255,.15);stroke-width:1.2;opacity:.75;
+    stroke-dasharray:22 9 58 6}
+  /* 吸力虚线：沿圆周转一圈，虚线沿径向流动 —— 像是周围的东西正被一路往里拖 */
+  .hole-pull{fill:none;stroke:rgba(214,232,255,.26);stroke-width:1.5;
+    stroke-dasharray:5 14;stroke-linecap:round;
+    animation:holePull 1.5s linear infinite}
+  @keyframes holePull{from{stroke-dashoffset:0}to{stroke-dashoffset:-38}}
+  /* 螺旋内吸的碎屑：一边跟着整圈转、一边沿半径往里掉，越靠近越细长越淡，最后没入视界。
+     碎屑本身是个圆，包围盒必定对称，所以这里的 transform-origin:center 是可靠的 */
+  .hole-mote{fill:#dce8f6;opacity:.28;
+    transform-box:fill-box;transform-origin:center;
+    animation:holeMote 2.6s cubic-bezier(.35,0,.85,.5) infinite}
+  @keyframes holeMote{
+    from{transform:translateY(0) scaleY(.45);opacity:0}
+    14%{opacity:.6}
+    70%{opacity:.42}
+    to{transform:translateY(var(--fall,180px)) scaleY(3.6);opacity:0}}
+  /* ---------- 挑战模式：新地形（参考蔚蓝） ---------- */
+  /* 钉刺：暗红铁座 + 一排细长毒针。针尖顶到判定框上沿，所以"看着会扎到"和"真的会扎到"完全一致 */
+  .spike-glow{fill:url(#spikeGlow)}
+  .spike-base{fill:#3a0f16;stroke:#8c2331;stroke-width:2}
+  .spike-tip{fill:url(#spikeGrad);stroke:#ff9a86;stroke-width:.85;opacity:.96}
+  .spike-shine{fill:none;stroke:#ffe0d4;stroke-width:.7;opacity:.45}
+  /* 弹簧：踩上去就弹起的垫子 */
+  .spring-base{fill:#0c141d;stroke:#2c4356;stroke-width:3;opacity:1}
+  .spring-plate{fill:none;stroke:rgba(246,220,150,.85);stroke-width:2.4}
+  .spring-coil{fill:none;stroke:rgba(246,220,150,.5);stroke-width:1.3;stroke-linecap:round}
+  /* 碎裂方块：悬空的薄板，踩上去亮起裂纹然后塌掉 */
+  .crumble .slab-f{fill:#121b26}
+  .crumble .edge{stroke:#4d7a9d;stroke-width:3.2;opacity:.9}
+  /* 坠落动画必须作用在子节点上：分组元素身上已经挂着一个 transform 属性，
+     若在它上面再叠 CSS transform，CSS 会盖掉那个属性，方块会瞬移到原点 */
+  .crumble.fall .slab-f,.crumble.fall .edge{animation:crumbFall .55s ease-in forwards}
+  @keyframes crumbFall{from{transform:translateY(0);opacity:1}
+    to{transform:translateY(130px);opacity:0}}
+  /* 单向平台：从下往上穿过去，从上往下踩得住（下方虚线是"能穿"的提示） */
+  .oneway-bar{fill:#0e1720;stroke:#2c4356;stroke-width:3.2;opacity:1}
+  .oneway-hint{fill:none;stroke:rgba(216,236,255,.28);stroke-width:1.2;
+    stroke-dasharray:3 6;stroke-linecap:round}
+  /* 移动平台：横渡深渊的渡板 */
+  .mover .slab-f{fill:#101a25}
+  .mover .edge{stroke:#4d7a9d;stroke-width:3.4;opacity:.95}
+  .mover-mark{fill:none;stroke:rgba(246,220,150,.45);stroke-width:1.3;stroke-linecap:round}
+  /* 火球：橙白实心核 + 暖橙外壳 + 向右拖出的火尾 + 外圈热辐射（1000 米后才出现） */
+  .fire-glow{fill:url(#fireGlow)}
+  .fire-tail{stroke:rgba(255,138,58,.5);stroke-width:7;stroke-linecap:round;opacity:.75}
+  .fire-shell{fill:#ff8a3a;stroke:#ffd9a8;stroke-width:2}
+  .fire-core{fill:#fff4dd}
+  /* 逼近提示：屏幕四边向内压的暗红 */
+  .danger{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;
+    transition:opacity .3s ease;
+    box-shadow:inset 0 0 170px rgba(186,64,64,.42), inset 0 0 52px rgba(186,64,64,.26)}
+  .danger.on{opacity:1;animation:dangerPulse 1.1s ease-in-out infinite}
+  @keyframes dangerPulse{0%,100%{opacity:.3}50%{opacity:.82}}
+  /* 挑战 HUD：分数在左上，冲刺冷却在左下 */
+  .chud{position:fixed;left:5.2%;top:4.6%;z-index:20;display:none;
+    flex-direction:column;gap:10px;pointer-events:none}
+  body.playing.chal .chud{display:flex}
+  .c-score{font-size:27px;font-weight:300;letter-spacing:.18em;line-height:1;
+    color:var(--ink);text-shadow:0 0 20px rgba(200,225,255,.4)}
+  .c-meta{display:flex;gap:20px;font-size:10px;letter-spacing:.24em;
+    color:rgba(188,212,240,.46)}
+  .c-meta i{font-style:normal;color:rgba(222,234,248,.84)}
+  .c-meta b{font-weight:400;color:rgba(246,220,150,.92)}
+  .c-meta em{font-style:normal;margin-left:2px;opacity:.7}
+  /* 距离爬升：倍率与难度档位。颜色用火球的暖橙，一眼分出"这是越来越难"的读数 */
+  .c-ramp{display:flex;gap:20px;font-size:10px;letter-spacing:.24em;
+    color:rgba(188,212,240,.46)}
+  .c-ramp b{font-weight:400;color:#ffb066;text-shadow:0 0 10px rgba(255,150,70,.4)}
+  .c-ramp i{font-style:normal;color:rgba(255,190,130,.78)}
+  /* 金球窗口：吃到金球后的 10 秒里得分 ×1.5，这一行只在这段时间内出现，分数本身也染成金色 */
+  .c-gold{display:none;align-items:baseline;gap:8px;font-size:10px;letter-spacing:.24em;
+    color:rgba(255,206,140,.6)}
+  .c-gold.on{display:flex}
+  .c-gold b{font-weight:400;color:#ffd77a;text-shadow:0 0 12px rgba(255,190,90,.5)}
+  .c-gold i{font-style:normal;color:rgba(255,226,180,.9)}
+  .c-gold em{font-style:normal;opacity:.65}
+  .c-score.boost{color:#ffe9bd;text-shadow:0 0 22px rgba(255,190,90,.5)}
+  .cd{position:fixed;left:5.2%;bottom:6.4%;z-index:20;display:none;
+    flex-direction:column;gap:7px;pointer-events:none}
+  body.playing.chal .cd{display:flex}
+  .cd-label{font-size:9px;letter-spacing:.34em;color:rgba(188,212,240,.42)}
+  .cd-track{display:block;width:96px;height:2px;background:rgba(188,212,240,.16)}
+  .cd-fill{display:block;height:100%;width:100%;background:#eaf4ff;
+    box-shadow:0 0 8px rgba(200,225,255,.55)}
+  /* 左下角常驻的按键小抄：堆在 DASH 冷却条上方，与左上角的记分条左右呼应。
+     只在挑战模式里出现；每行 键位(亮) + 说明(暗)，和面板/底部提示同一套字距语言 */
+  .chint{position:fixed;left:5.2%;bottom:calc(6.4% + 32px);z-index:20;display:none;
+    flex-direction:column;gap:6px;pointer-events:none}
+  body.playing.chal .chint{display:flex;animation:chintIn .9s cubic-bezier(.3,.8,.3,1) .3s both}
+  .chint-row{display:flex;align-items:baseline;gap:11px}
+  .chint-row b{min-width:72px;font-size:9px;font-weight:400;letter-spacing:.2em;
+    color:rgba(222,238,252,.64)}
+  .chint-row span{font-size:9px;letter-spacing:.22em;color:rgba(186,212,240,.4)}
+  @keyframes chintIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+  /* 挑战模式倒数：居中一个大数字，薄字重 + 宽字距，和标题页/结算屏同一套字形语言 */
+  .cdown{position:fixed;inset:0;z-index:22;display:none;flex-direction:column;
+    align-items:center;justify-content:center;gap:10px;pointer-events:none;
+    opacity:0;transition:opacity .18s ease}
+  .cdown.on{display:flex;opacity:1}
+  .cdown-num{font-size:96px;font-weight:200;line-height:1;letter-spacing:.08em;
+    color:#eaf4ff;text-shadow:0 0 26px rgba(150,200,255,.5), 0 0 60px rgba(90,150,230,.28)}
+  .cdown-num.pop{animation:cdownPop .5s cubic-bezier(.2,1.5,.4,1)}
+  .cdown-tip{font-size:10px;letter-spacing:.5em;text-indent:.5em;
+    color:rgba(188,212,240,.5)}
+  /* 每个数字弹入一次：从大缩到正常 + 淡出，给倒数一点"节拍" */
+  @keyframes cdownPop{
+    0%{transform:scale(1.5);opacity:0}
+    38%{transform:scale(1);opacity:1}
+    100%{transform:scale(.94);opacity:.86}
+  }
+  /* 挑战面板里的操作表 */
+  .c-keys{display:flex;flex-direction:column;margin-top:2px}
+  .c-key{display:flex;align-items:baseline;gap:14px;padding:8px 0;
+    border-bottom:1px solid rgba(150,180,215,.1)}
+  .c-key:last-child{border-bottom:0}
+  .c-k{min-width:108px;font-size:10px;letter-spacing:.24em;color:rgba(216,236,255,.7)}
+  .c-v{font-size:10px;letter-spacing:.14em;color:rgba(186,212,240,.44)}
 
   /* 窗口偏矮时收紧排版，避免面板内部出现滚动 */
   @media (max-height:780px){
@@ -562,14 +855,18 @@
     .p-actions{margin-top:12px}
     .s-empty{padding:12px 0 2px}
     .a-row{padding:8px 0}
+    .c-key{padding:5px 0}
   }
 
   @media (max-width:760px){
     .item{font-size:12px}
+    .item:nth-child(1){margin-left:0}
     .item:nth-child(2){margin-left:14px}
-    .item:nth-child(3){margin-left:36px}
-    .item:nth-child(4){margin-left:70px}
-    .item:nth-child(5){margin-left:104px}
+    .item:nth-child(3){margin-left:28px}
+    .item:nth-child(4){margin-left:42px}
+    /* 窄屏同比收窄，末尾两项同样再向右探出一点 */
+    .item:nth-child(5){margin-left:62px}
+    .item:nth-child(6){margin-left:82px}
     .title{width:64vw}
     .panel{width:88vw}
     .panel-body{padding:26px 22px 18px}
@@ -777,16 +1074,70 @@
             <stop offset="55%" stop-color="#dceaff" stop-opacity=".1"/>
             <stop offset="100%" stop-color="#dceaff" stop-opacity="0"/>
           </radialGradient>
+          <!-- 黄球的暖光：抓钩唯一能勾住的东西，用暖色把它从蓝白场景里单拎出来 -->
+          <radialGradient id="orbGlow">
+            <stop offset="0" stop-color="#f8e2a4" stop-opacity=".34"/>
+            <stop offset="55%" stop-color="#f2d489" stop-opacity=".1"/>
+            <stop offset="100%" stop-color="#f2d489" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 拾取球的柔光：白球是冷白呼吸光，金球是暖金光（金球把分变成 1.5 倍，要更亮） -->
+          <radialGradient id="pickGlow">
+            <stop offset="0" stop-color="#eaf4ff" stop-opacity=".28"/>
+            <stop offset="58%" stop-color="#cfe4fb" stop-opacity=".08"/>
+            <stop offset="100%" stop-color="#cfe4fb" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="goldGlow">
+            <stop offset="0" stop-color="#ffe9a8" stop-opacity=".44"/>
+            <stop offset="55%" stop-color="#f0c060" stop-opacity=".12"/>
+            <stop offset="100%" stop-color="#f0c060" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 钉刺：针尖亮、针根暗的红钢渐变；底下再垫一层微弱红光，暗场里一眼能认出是危险物 -->
+          <linearGradient id="spikeGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff7c63"/>
+            <stop offset="46%" stop-color="#d3302c"/>
+            <stop offset="1" stop-color="#5c1016"/>
+          </linearGradient>
+          <radialGradient id="spikeGlow">
+            <stop offset="0" stop-color="#ff4a3c" stop-opacity=".32"/>
+            <stop offset="60%" stop-color="#a01820" stop-opacity=".1"/>
+            <stop offset="1" stop-color="#7a1018" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 火球的热辐射：暖橙外圈，和蓝白场景、黄色抓钩球都拉开距离 -->
+          <radialGradient id="fireGlow">
+            <stop offset="0" stop-color="#ffb75e" stop-opacity=".5"/>
+            <stop offset="55%" stop-color="#ff7a2f" stop-opacity=".16"/>
+            <stop offset="100%" stop-color="#ff6a1f" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 黑洞外圈：向内收的冷光，中心全黑 -->
+          <radialGradient id="holeGlow">
+            <stop offset="62%" stop-color="#cfe2ff" stop-opacity="0"/>
+            <stop offset="82%" stop-color="#cfe2ff" stop-opacity=".2"/>
+            <stop offset="100%" stop-color="#cfe2ff" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 黑洞视界边缘：左暗右亮，让那圈亮环看起来朝着主角这一侧被拽长 -->
+          <linearGradient id="holeEdge" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#9fbde2" stop-opacity=".14"/>
+            <stop offset="55%" stop-color="#d3e4ff" stop-opacity=".4"/>
+            <stop offset="100%" stop-color="#eaf4ff" stop-opacity=".74"/>
+          </linearGradient>
           <!-- 过场"卡在地里"用：只显示地表面(y=815)以上的部分 -->
           <clipPath id="groundClip">
             <rect x="-1000" y="-600" width="5200" height="1415"/>
           </clipPath>
         </defs>
         <g id="terrain"></g>
+        <g id="orbs"></g>
+        <!-- 拾取球（白球/金球）：单独一层，靠 data-sx 跟着地形段一起回收 -->
+        <g id="pick"></g>
+        <!-- 短命火花层：拾取闪光与冲刺残影都放这里，和爆散粒子层分开，互不打断 -->
+        <g id="spark"></g>
         <g id="props"></g>
         <g id="player"></g>
+        <g id="rope"></g>
         <g id="rubble"></g>
+        <g id="fire"></g>
         <g id="fx"></g>
+        <g id="hole"></g>
       </svg>
       <!-- 过场"卡住"提示：文字停在出生点标杆顶端（位置由 JS 按标杆坐标定位） -->
       <div class="lead" id="introLead">
@@ -795,19 +1146,13 @@
       <!-- 过场结束后的章节标题：挂在背景里（世界坐标），位置由 JS 按出生点定位 -->
       <div class="chapter" id="chapterTag"><span>序幕-未知</span></div>
       <!-- 祭坛提示：站在祭坛上且尚未习得时显示（世界坐标，位置由 JS 按祭坛定位） -->
-      <div class="lead" id="altarHint"><span class="lead-txt">PRESS E</span></div>
+      <div class="lead lead-big" id="altarHint"><span class="lead-txt">PRESS E</span></div>
     </div>
   </div>
   </div><!-- /.cam -->
 
   <div class="hud" id="hud">
     <span id="hudInfo"></span>
-  </div>
-
-  <!-- 二段跳冷却条：习得后才出现，条满=可用，用掉后随时间回填 -->
-  <div class="dj-bar" id="djBar">
-    <span class="dj-label">二段跳</span>
-    <span class="dj-track"><i id="djFill"></i></span>
   </div>
 
   <!-- 习得提示：固定在屏幕正中的一行字 -->
@@ -849,6 +1194,13 @@
 
   <!-- menu -->
   <nav class="menu" id="menu">
+    <button class="item" data-label="CHALLENGE">
+      <span class="label">CHALLENGE</span>
+      <span class="ind">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="2.3" fill="currentColor"/></svg>
+        <span class="tick"></span>
+      </span>
+    </button>
     <button class="item active" data-label="NEW GAME">
       <span class="label">NEW GAME</span>
       <span class="ind">
@@ -888,6 +1240,48 @@
 
   <!-- snow : 飘落粒子（由脚本按视口宽度生成，纯 CSS 动画驱动） -->
   <div class="snow" id="snow"></div>
+
+  <!-- 黑洞逼近时压过来的暗红边 -->
+  <div class="danger" id="danger"></div>
+
+  <!-- 挑战模式 HUD：分数 / 距离 / 技能 / 拾取 -->
+  <div class="chud" id="chud">
+    <span class="c-score" id="cScore">0</span>
+    <span class="c-meta">
+      <span>距离 <i id="cDist">0</i><em>米</em></span>
+      <span>技能 <i id="cSkill">0</i></span>
+      <span>拾取 <i id="cPick">0</i></span>
+    </span>
+    <!-- 金球窗口：吃到金球后 10 秒内得分 ×1.5，这里显示剩余时间 -->
+    <span class="c-gold" id="cGold">
+      <span>得分 <b>×1.5</b></span>
+      <span><i id="cGoldT">10.0</i><em>s</em></span>
+    </span>
+    <!-- 距离爬升读数：跑到 500 米速度就 ×1.2，之后每 500 米再 +0.2 倍；难度档位每 1000 米一档 -->
+    <span class="c-ramp">
+      <span>速度 <b id="cRamp">×1.0</b></span>
+      <span>难度 <i id="cTier">Lv.1</i></span>
+    </span>
+  </div>
+  <!-- 冲刺冷却：排空后回填 -->
+  <div class="cd" id="cdBar">
+    <span class="cd-label">DASH</span>
+    <span class="cd-track"><i class="cd-fill" id="cdFill"></i></span>
+  </div>
+  <!-- 挑战模式左下角的按键小抄：常驻显示，进挑战才出现（见 CSS body.playing.chal） -->
+  <div class="chint" id="chint">
+    <span class="chint-row"><b>← →</b><span>奔跑</span></span>
+    <span class="chint-row"><b>SPACE</b><span>跳跃 · 二段跳</span></span>
+    <span class="chint-row"><b>贴墙 SPACE</b><span>蹬墙跳</span></span>
+    <span class="chint-row"><b>SHIFT</b><span>冲刺</span></span>
+    <span class="chint-row"><b>左键</b><span>抓钩</span></span>
+    <span class="chint-row"><b>ESC</b><span>暂停</span></span>
+  </div>
+  <!-- 挑战模式倒数：进入挑战、以及暂停后继续游戏时各来一次 3-2-1（倒数期间世界静止） -->
+  <div class="cdown" id="cdown">
+    <span class="cdown-num" id="cdownN">3</span>
+    <span class="cdown-tip">准备</span>
+  </div>
 
   <div class="vignette"></div>
   <div class="grain"></div>
@@ -972,6 +1366,60 @@
       </div>
     </section>
 
+    <!-- 挑战模式 -->
+    <section class="panel" id="pChal" role="dialog" aria-modal="true" aria-label="挑战模式">
+      <div class="panel-mark"><b class="mk-dot mk-top"></b><i class="mk-line"></i><b class="mk-dot mk-bot"></b></div>
+      <div class="panel-wipe">
+      <div class="panel-frame"></div>
+      <div class="panel-body">
+      <div class="p-head">
+        <span class="p-cn">挑战模式</span>
+        <span class="p-en">CHALLENGE / ENDLESS</span>
+      </div>
+      <div class="p-rule"></div>
+      <div class="a-row"><span class="a-k">最高分</span><span class="a-v" id="chalBest">0</span></div>
+      <div class="a-row"><span class="a-k">上次得分</span><span class="a-v" id="chalLast">0</span></div>
+      <div class="p-rule"></div>
+      <div class="c-keys">
+        <div class="c-key"><span class="c-k">← → / A D</span><span class="c-v">奔跑</span></div>
+        <div class="c-key"><span class="c-k">SPACE ×2</span><span class="c-v">二段跳：空中再按一次空格</span></div>
+        <div class="c-key"><span class="c-k">SHIFT</span><span class="c-v">冲刺：短暂提速，越跑越快；起步会拖出残影</span></div>
+        <div class="c-key"><span class="c-k">鼠标左键</span><span class="c-v">抓钩：勾住黄球，被拽过去并站上去</span></div>
+        <div class="c-key"><span class="c-k">贴墙按 SPACE</span><span class="c-v">蹬墙跳；只按方向键则缓慢滑墙下坠</span></div>
+        <div class="c-key"><span class="c-k">白球 / 金球</span><span class="c-v">白球 +100 分；金球 +150 分并开启 10 秒得分 ×1.5</span></div>
+        <div class="c-key"><span class="c-k">踩黄球按 SPACE</span><span class="c-v">引爆黄球：一次超高暴冲，额外 +200 分</span></div>
+        <div class="c-key"><span class="c-k">ESC</span><span class="c-v">暂停：从暂停里可以继续或退回标题</span></div>
+      </div>
+      <div class="p-actions">
+        <button class="btn" id="btnChalBack" type="button">返回</button>
+        <button class="btn primary" id="btnChalStart" type="button">开始挑战</button>
+      </div>
+      <div class="p-foot"><span><b>ENTER</b> 开始</span><span><b>ESC</b> 返回</span></div>
+      </div>
+      </div>
+    </section>
+
+    <!-- 暂停 -->
+    <section class="panel" id="pPause" role="dialog" aria-modal="true" aria-label="暂停游戏">
+      <div class="panel-mark"><b class="mk-dot mk-top"></b><i class="mk-line"></i><b class="mk-dot mk-bot"></b></div>
+      <div class="panel-wipe">
+      <div class="panel-frame"></div>
+      <div class="panel-body">
+      <div class="p-head">
+        <span class="p-cn">暂停游戏</span>
+        <span class="p-en">PAUSED</span>
+      </div>
+      <div class="p-rule"></div>
+      <div class="p-stack">
+        <button class="btn" id="btnResume" type="button">继续游戏</button>
+        <button class="btn" id="btnPauseSet" type="button">设置</button>
+        <button class="btn" id="btnPauseMenu" type="button">返回至主菜单</button>
+      </div>
+      <div class="p-foot"><span><b>↑ ↓</b> 选择</span><span><b>ENTER</b> 确认</span><span><b>ESC</b> 继续游戏</span></div>
+      </div>
+      </div>
+    </section>
+
     <!-- 确认 -->
     <section class="panel" id="pConfirm" role="dialog" aria-modal="true" aria-label="确认">
       <div class="panel-mark"><b class="mk-dot mk-top"></b><i class="mk-line"></i><b class="mk-dot mk-bot"></b></div>
@@ -988,7 +1436,7 @@
         <button class="btn" id="btnCancel" type="button">取消</button>
         <button class="btn primary" id="btnOk" type="button">确定</button>
       </div>
-      <div class="p-foot"><span><b>← →</b> 切换</span><span><b>ENTER</b> 确认</span><span><b>ESC</b> 返回</span></div>
+      <div class="p-foot"><span><b>A D</b> 切换</span><span><b>ENTER</b> 确认</span><span><b>ESC</b> 返回</span></div>
       </div>
       </div>
     </section>
@@ -998,11 +1446,28 @@
     <div class="fade-inner">
       <span class="msg" id="fadeMsg"></span>
       <span class="sub" id="fadeSub"></span>
-      <!-- 通关结算：章节名 + 已飞升 + 三行数据 -->
+    </div>
+  </div>
+
+  <!-- 结算窗口：死亡爆炸（或通关）演完后再"弹"出来的居中弹窗。黑色幕布只负责转场黑场 -->
+  <div class="sumwin" id="sumWin">
+    <div class="sumwin-veil"></div>
+    <div class="sumwin-card">
+      <span class="sumwin-msg" id="sumMsg"></span>
+      <span class="sumwin-sub" id="sumSub"></span>
+      <!-- 结算数据：剧情通关是 死亡/跳跃/时间，挑战模式是 得分/距离/拾取，同一套版式 -->
       <div class="fade-stats" id="fadeStats">
-        <span class="row"><b>死亡次数</b><i id="statDeath">0</i></span>
-        <span class="row"><b>跳跃次数</b><i id="statJump">0</i></span>
-        <span class="row"><b>使用时间</b><i id="statTime">00:00</i></span>
+        <span class="row"><b id="statK1">死亡次数</b><i id="statV1">0</i></span>
+        <span class="row"><b id="statK2">跳跃次数</b><i id="statV2">0</i></span>
+        <span class="row"><b id="statK3">使用时间</b><i id="statV3">00:00</i></span>
+      </div>
+      <!-- 结算的两枚按钮：每关结束都走这里，最后一关没有"下一关" -->
+      <div class="fade-acts" id="fadeActs">
+        <button class="btn" id="fadeSave" type="button">保存并退出</button>
+        <button class="btn primary" id="fadeNext" type="button">下一关</button>
+      </div>
+      <div class="fade-foot" id="fadeFoot">
+        <span><b>A D</b> 切换</span><span><b>ENTER</b> 确认</span><span><b>ESC</b> 保存并退出</span>
       </div>
     </div>
   </div>
@@ -1099,24 +1564,61 @@
   const fadeMsg = document.getElementById('fadeMsg');
   const fadeSub = document.getElementById('fadeSub');
   const fadeStats = document.getElementById('fadeStats');
-  const statDeath = document.getElementById('statDeath');
-  const statJump  = document.getElementById('statJump');
-  const statTime  = document.getElementById('statTime');
+  const fadeActs = document.getElementById('fadeActs');
+  const fadeFoot = document.getElementById('fadeFoot');
+  const fadeBtns = [document.getElementById('fadeSave'), document.getElementById('fadeNext')];
+  // 结算窗口：死亡爆炸 / 通关之后才"弹"出来的一层，与转场黑幕 #fade 完全分开
+  const sumWin = document.getElementById('sumWin');
+  const sumMsg = document.getElementById('sumMsg');
+  const sumSub = document.getElementById('sumSub');
+  const prefReduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let fSel = 1;                        // 结算面板选中的按钮：默认停在主操作"下一关"上
+  let fadeActsOn = false;              // 黑幕上现在是不是"关卡结算"（挑战结束的说明屏不是）
+  let fadeKind = 'level';              // 结算面板属于谁：level(关卡) / challenge(挑战模式)
+  const statK = [1, 2, 3].map(n => document.getElementById('statK' + n));
+  const statV = [1, 2, 3].map(n => document.getElementById('statV' + n));
   const overlay = document.getElementById('overlay');
   const panelSave = document.getElementById('pSave');
   const panelSet = document.getElementById('pSet');
   const panelAbout = document.getElementById('pAbout');
+  const panelChal = document.getElementById('pChal');
+  const panelPause = document.getElementById('pPause');
   const panelConfirm = document.getElementById('pConfirm');
-  const panels = { save: panelSave, settings: panelSet, about: panelAbout, confirm: panelConfirm };
+  const panels = { save: panelSave, settings: panelSet, about: panelAbout,
+                   challenge: panelChal, pause: panelPause, confirm: panelConfirm };
   const cDesc = panelConfirm.querySelector('.c-desc');
   const cBtns = [document.getElementById('btnCancel'), document.getElementById('btnOk')];
+  const pauseBtns = [document.getElementById('btnResume'),
+                     document.getElementById('btnPauseSet'),
+                     document.getElementById('btnPauseMenu')];
+  // 挑战模式：面板里的成绩、记分 HUD、冲刺冷却条与黑洞逼近的暗红边
+  const chalBest = document.getElementById('chalBest');
+  const chalLast = document.getElementById('chalLast');
+  const dangerEl = document.getElementById('danger');
+  const cScore = document.getElementById('cScore');
+  const cDist  = document.getElementById('cDist');
+  const cSkill = document.getElementById('cSkill');
+  const cPick  = document.getElementById('cPick');
+  const cGold  = document.getElementById('cGold');      // 金球窗口：得分 ×1.5 的剩余时间
+  const cGoldT = document.getElementById('cGoldT');
+  const cRamp  = document.getElementById('cRamp');
+  const cTier  = document.getElementById('cTier');
+  const cdFill = document.getElementById('cdFill');
+  const cdownEl = document.getElementById('cdown');    // 挑战模式的 3-2-1 倒数
+  const cdownN  = document.getElementById('cdownN');
+  const gOrbs = document.getElementById('orbs');
+  const gPick = document.getElementById('pick');       // 拾取球层（挑战模式专用，开一局时清空）
+  const gSpark = document.getElementById('spark');     // 短命火花层：拾取闪光 + 冲刺残影
+  const gRope = document.getElementById('rope');
+  const gHole = document.getElementById('hole');
+  const gFire = document.getElementById('fire');       // 火球层（挑战模式专用，开一局时清空）
 
   const SAVE_KEY = 'echo.saves.v1';
   const SLOT_N = 4;
   const pad = n => String(n).padStart(2, '0');
 
   let idx = 0;            // 主菜单选中项
-  let mode = 'title';     // title | save | settings | confirm | play | ending
+  let mode = 'title';     // title | save | settings | confirm | play | pause | ending
   let saveMode = 'new';   // new(开始游戏) | load(继续游戏)
   let slotEls = [];
   let sel = 0;            // 存档槽选中项
@@ -1124,6 +1626,8 @@
   let confirmFrom = 'title';
   let confirmOk = null;
   let confirmReturn = null;   // 确认后要就地回到的面板（如"删除存档"→回到选择存档页）
+  let pauseSel = 0;           // 暂停面板选中项：0 继续游戏 / 1 设置 / 2 返回至主菜单
+  let pauseUnder = false;     // 暂停面板下还压着关卡：设置页的"返回"要回暂停页，而不是主菜单
   let saves = readSaves();
 
   function readSaves(){
@@ -1142,6 +1646,45 @@
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
   function clock(sec){ return `${pad(Math.floor(sec/60))}:${pad(sec%60)}`; }
+  // 结算面板的三行数据：剧情与挑战共用同一套版式，只是换标签和内容
+  function setFadeStats(rows){
+    rows.forEach(([k, v], i) => { statK[i].textContent = k; statV[i].textContent = v; });
+    // 行数不定（关卡结算 3 行、挑战结算 2 行）：多出来的行要收起来，
+    // 否则会露出上一次结算残留的那一行（比如"使用时间 00:00"）
+    [...fadeStats.children].forEach((row, i) => { row.style.display = i < rows.length ? '' : 'none'; });
+    fadeStats.classList.add('show');
+  }
+  // 弹出 / 收起结算窗口：窗口是独立一层，和转场黑幕互不干扰。
+  // body.sum 期间两套 HUD 与危险暗角收掉 —— 世界留在原地当背景，但别透过弹窗露出来
+  function showSum(){ sumWin.classList.add('on'); document.body.classList.add('sum'); }
+  function hideSum(){ sumWin.classList.remove('on'); document.body.classList.remove('sum'); }
+  // 收起结算窗口的所有附加块（统计 / 按钮 / 底部提示）。换关的黑幕上不该留着结算
+  function clearFadePanel(){
+    fadeStats.classList.remove('show');
+    fadeActs.classList.remove('show');
+    fadeFoot.classList.remove('show');
+    hideSum();
+    fadeActsOn = false;
+    fadeKind = 'level';
+  }
+  // 结算按钮的选中态：只按左右键切换，鼠标悬停也同步（与确认框同一套行为）
+  function syncFadeBtns(){
+    const only = fadeBtns[1].style.display === 'none';
+    if(only) fSel = 0;
+    fadeBtns.forEach((b, n) => b.classList.toggle('on', n === fSel && !(only && n === 1)));
+  }
+  // 结算面板的两个动作：剧情 = 0 保存并退出（最后一关是"退出"）/ 1 下一关；
+  // 挑战模式 = 0 退出（回标题）/ 1 重试（再开一局）
+  function runFadeBtn(n){
+    if(mode !== 'clear' || !fadeActsOn) return;
+    if(fadeKind === 'challenge'){
+      if(n === 0){ leaveChallenge(); return; }
+      startChallenge();
+      return;
+    }
+    if(n === 0){ flushPlayed(); backToTitle(); return; }   // 通关进度已在 finishLevel 里落盘
+    nextLevel();
+  }
 
   // ---------- main menu ----------
   function setActive(i){
@@ -1162,7 +1705,8 @@
   function select(it){
     knockItem(it);
     const label = it.dataset.label;
-    if(label === 'NEW GAME'){ saveMode = 'new'; openSaves(); }
+    if(label === 'CHALLENGE'){ openChallenge(); }
+    else if(label === 'NEW GAME'){ saveMode = 'new'; openSaves(); }
     else if(label === 'CONTINUE'){ saveMode = 'load'; openSaves(); }
     else if(label === 'SETTINGS'){ showPanel('settings'); }
     else if(label === 'ABOUT'){ showPanel('about'); }
@@ -1208,6 +1752,55 @@
   }
   function backToMenu(){ hideOverlay(); mode = 'title'; setActive(idx); }
 
+  // ---------- pause ----------
+  // 关卡内按 ESC：停掉主循环把画面定格，弹出暂停面板。面板与黑幕沿用标题页那一套
+  function openPause(){
+    if(mode !== 'play' || !inLevel) return;
+    stopLoop();
+    for(const k in keys) delete keys[k];      // 清空按键，恢复后角色不会自己继续往前跑
+    countdown = 0; cdownEl.classList.remove('on');   // 正在数的倒数先撤掉，继续游戏时会重新数满 3 秒
+    pauseUnder = true;
+    pauseSel = 0;
+    syncPBtns();
+    showPanel('pause');
+  }
+  // 继续游戏：收起面板接回主循环。startLoop 会把计时基准归零，恢复瞬间不会跳帧。
+  // 挑战模式再补一次 3-2-1 倒数，免得一恢复黑洞就已经贴脸、来不及反应
+  function resumeGame(){
+    if(mode !== 'pause') return;
+    pauseUnder = false;
+    hideOverlay();
+    mode = 'play';
+    if(chalOn) countdown = CHAL.countT;
+    startLoop();
+  }
+  function syncPBtns(){ pauseBtns.forEach((b, n) => b.classList.toggle('on', n === pauseSel)); }
+  // 暂停面板的三个动作：0 继续游戏 / 1 设置 / 2 返回至主菜单（先弹未保存的警告）
+  function runPauseBtn(n){
+    if(mode !== 'pause') return;
+    if(n === 0) resumeGame();
+    else if(n === 1) showPanel('settings');
+    else askLeaveLevel();
+  }
+  // 关卡里退回主菜单要先警告：这一段的进度没落盘就会白玩。
+  // 挑战模式没有存档可丢（成绩是打完立刻落盘的），所以文案与动作都换成"退出挑战"，
+  // 而且必须走 leaveChallenge 才会清掉挑战模式的黑洞/火球/粒子层
+  function askLeaveLevel(){
+    const chal = chalOn;
+    askConfirm({
+      cn: chal ? '退出挑战' : '返回至主菜单', en: chal ? 'QUIT CHALLENGE' : 'BACK TO TITLE',
+      desc: chal ? '本局挑战将直接结束（最高纪录已保存），确定要退出吗？'
+                 : '未保存的游戏进度将消失，确定要返回主菜单吗？',
+      ok:'确认',
+      onOk: () => { pauseUnder = false; chal ? leaveChallenge() : backToTitle(); }
+    });
+  }
+  // 设置/关于页的返回：从暂停面板进来的就退回暂停面板，别把关卡丢在背后直接回标题
+  function closePanelBack(){
+    if(pauseUnder) showPanel('pause');
+    else backToMenu();
+  }
+
   // ---------- save select ----------
   function openSaves(){
     panelSave.querySelector('.p-cn').textContent = saveMode === 'load' ? '读取存档' : '选择存档';
@@ -1231,7 +1824,8 @@
         '<span class="s-main">' +
           '<span class="s-name">存档 ' + pad(i + 1) + '</span>' +
           '<span class="s-meta">' + (sv
-            ? '创建于 ' + stamp(sv.created) + ' · 游玩 ' + clock(sv.played || 0)
+            ? '创建于 ' + stamp(sv.created) + ' · 游玩 ' + clock(sv.played || 0) +
+              ' · 进度 ' + LEVELS[sv.level || 0].name
             : '尚无记录') + '</span>' +
         '</span>' +
         '<span class="s-acts">' +
@@ -1288,7 +1882,8 @@
   }
 
   function newSave(i){
-    saves[i] = { created: Date.now(), played: 0 };
+    // level 记录"该从第几关开头继续"：新档从第一关（0）开始
+    saves[i] = { created: Date.now(), played: 0, level: 0 };
     writeSaves();
   }
 
@@ -1307,6 +1902,7 @@
   function beginGame(i, withIntro){
     hideOverlay();
     fade.classList.remove('quick');
+    clearFadePanel();
     fadeMsg.textContent = '存档 ' + pad(i + 1);
     fadeSub.textContent = '载入中';
     fade.classList.add('on');
@@ -1331,6 +1927,7 @@
   function confirmCancel(){
     confirmReturn = null;
     if(confirmFrom === 'save') showPanel('save');
+    else if(confirmFrom === 'pause') showPanel('pause');   // 取消返回主菜单：退回暂停面板
     else backToMenu();
   }
   function confirmOkRun(){
@@ -1351,6 +1948,7 @@
   function exitGame(){
     hideOverlay();
     mode = 'ending';
+    clearFadePanel();
     fadeMsg.textContent = '感谢游玩';
     fadeSub.textContent = 'ECHO · 现在可以安全关闭窗口';
     fade.classList.add('on');
@@ -1359,6 +1957,8 @@
 
   function backToTitle(){
     leaveLevel();
+    hideSum();
+    document.body.classList.remove('playing', 'chal');   // 结算期保留的仿佛"世界还在"，回标题时一并摘掉
     fade.classList.remove('on');
     mode = 'title';
     setActive(idx);
@@ -1378,7 +1978,7 @@
     [2110, 700, 120,  26, 'f'],
     [2290, 610, 120,  26, 'f'],
     [2470, 520, 120,  26, 'f'],
-    [2650, 780, 550, 120, 'g']    // 终点长平台：祭坛与大门都在这上面
+    [2650, 780, 720, 120, 'g']    // 终点长平台：祭坛、信标与拱门都立在这上面
   ];
   // 第二关：围绕二段跳设计。单跳上限约为 横距 207 / 抬升 131，
   // 所以同高的缺口一律做成 260（超过单跳横距），每一次上行都做成 +150（超过单跳抬升）。
@@ -1392,18 +1992,20 @@
     [3200, 630, 240,  26, 'f'],   // 缺口 200 + 抬升 150
     [3500, 780, 320, 120, 'g']    // 缺口 60 + 落到底：终点在此
   ];
-  // 关卡表：每关自带宽度/地形/检查点/出生点/终点；第一关额外有祭坛与终点大门
+  // 终点拱门参数：cx 门洞中心 / base 落地线 / hw 门洞半宽 / spring 起券线高度（券顶在 base-spring-hw）
+  // door 为 true 表示有门扇，习得二段跳后向上收起；为 false 表示门洞本就通行、常亮
   const LEVELS = [
-    { name:'序幕-未知', w:3200, solids:SOLIDS1,
+    { name:'序幕-未知', w:3370, solids:SOLIDS1,
       cps:[{x:1020, y:620}, {x:1940, y:790}],
       spawn:{x:110, y:750},
-      goal:{x:2980, y:680, w:90, h:100},
-      altar:{x:2950, y:780, w:150},              // 祭坛：站上去才能按 E
-      gate:{x:3135, y:655, w:62, h:125} },       // 终点大门：习得后开启
-    { name:'第二章', w:3820, solids:SOLIDS2,
+      goal:{x:2900, y:680, w:90, h:100},
+      altar:{x:2870, y:780, w:150},                            // 祭坛：站上去才能按 E
+      gate:{cx:3250, base:780, hw:65, spring:85, door:true} },  // 出口拱门：习得后开启
+    { name:'序幕I - 进化', w:3820, solids:SOLIDS2,
       cps:[{x:710, y:815}, {x:2840, y:780}, {x:3560, y:780}],
       spawn:{x:110, y:750},
-      goal:{x:3640, y:600, w:90, h:180} }
+      goal:{x:3640, y:600, w:90, h:180},
+      gate:{cx:3685, base:780, hw:90, spring:110, door:false} } // 终点拱门：信标就立在门洞正中
   ];
   let levelIdx = 0;
   let WORLD_W = LEVELS[0].w, SOLIDS = LEVELS[0].solids, CPS = LEVELS[0].cps,
@@ -1433,13 +2035,15 @@
   };
   // 石块物理：等效重力、速度上限、静置阈值
   const STONE = { grav:PHYS.grav * .86, maxVy:1400, sleepVx:20, sleepVy:40 };
-  // 习得二段跳的过场：推近 → 缓慢上升 → 白光炸开 → 镜头回正 → 居中字幕 + 冷却条 → 大门开启
+  // 习得二段跳的过场：推近 → 上升 → 白光炸开 → 快速下坠 → 落地弹跳 → 转身站定 → 大门开启 → 镜头回正 → 居中字幕
   const LEARN = {
     rise:1.6, riseH:92,                  // 上升时长 / 上升高度
-    flash:.5, out:.95,                   // 白光炸开 / 镜头回正 + 白光消退
-    text:2.4, textWait:.7, gate:1.3      // 居中字幕停留 / 字幕出现多久后冒出冷却条 / 大门开启
+    flash:.5,                            // 白光炸开
+    fallG:3.4,                           // 下坠重力倍率：比正常重力大得多，砸得又快又重
+    bounceVy:-300, bounceG:.55, bounceN:2,   // 落地弹跳：初速 / 重力倍率（越小弹得越高）/ 弹几下
+    turn:.55,                            // 落地后转身站定的停留
+    out:.95, text:2.4                    // 镜头回正 / 居中字幕停留
   };
-  const DJ = { cd:.5 };                  // 二段跳冷却 0.5 秒
 
   const gTerrain = document.getElementById('terrain');
   const gProps   = document.getElementById('props');
@@ -1454,8 +2058,6 @@
   const altarHint = document.getElementById('altarHint');
   const learnTag  = document.getElementById('learnTag');
   const whiteout  = document.getElementById('whiteout');
-  const djBar     = document.getElementById('djBar');
-  const djFill    = document.getElementById('djFill');
   const worldInner = document.querySelector('.world-inner');
   const worldSvg   = document.getElementById('worldSvg');
 
@@ -1468,11 +2070,15 @@
 
   let rects = [], cpEls = [], goalEl = null, gateEl = null, heroEl = null, stoneEl = null;
   const hero = {x:0, y:0, vx:0, vy:0, onGround:false, coyote:0, buffer:0, face:'right',
-                spin:0, shake:0, djAvail:false, djCd:0};
+                spin:0, shake:0, djAvail:false};
   const keys = Object.create(null);
   let camX = 0, running = false, inLevel = false, rafId = 0, lastT = 0;
   let lastCP = -1, elapsed = 0, sinceSave = 0, playedBase = 0, playedAcc = 0, curSlot = -1;
+  let heroDeaths = 0, heroJumps = 0;      // 本关的统计：死亡次数 / 跳跃次数，通关结算时显示
   let hudCache = '', faceSet = '';
+  // 微表情：moodSet 记住当前表情，只在变化时写一次 DOM；fallPeak 记本次滞空最高点，
+  // 用来判断"这一路掉下来够不够高" —— 小跳不触发表情，从高处砸下来才瞪眼
+  let moodSet = '~', fallPeak = 0;
   // 过场状态机：wait 等幕布拉开 → fall 坠落 → stuck 卡住 → free 正常游戏
   let introPhase = 'free', stuckHits = 0, stuckLift = 0, cutLock = 0;
   // 过场推近：zoomT 0→1 为混合进度；stones 为可推动的石块物理体
@@ -1482,11 +2088,68 @@
   // 习得二段跳：learn 为过场状态（null = 没在演），hasDouble 为是否已习得
   let learn = null, hasDouble = false;
   // 掉入虚空：dead 为死亡状态（等玩家按 R），fxP 为爆炸粒子
-  let dead = false, fxP = [], fxRing = null, fxT = 0;
+  let dead = false, fxP = [], fxRing = null, fxT = 0, fxTmax = 1.25;
+  // 挑战模式：chal 为一局的全部状态（null = 不在挑战里），chalOn 为是否处于挑战模式
+  let chal = null, chalOn = false, holeEl = null;
+  // 挑战模式的 3-2-1 倒数：>0 时整个世界冻结（黑洞、火球、平台全都不动），只走摄像机与倒数数字。
+  // 进入挑战、以及暂停后继续游戏各触发一次
+  let countdown = 0, cdownShown = 0;
+  let holeWarpA = null, holeWarpB = null, holeSwirl = null, holeSpinOn = true;       // 黑洞的时空环与螺旋碎屑（每帧写 rotate）
+  let chalSegs = [], lastSeg = '',
+      chalGenX = 0, chalWorldW = 0;
 
   const sc = () => Math.max(.55, window.innerHeight / WORLD_H);   // 世界高 900 = 视口高
   const viewW = () => window.innerWidth / sc();
   const clampCam = x => clamp(x, 0, Math.max(0, WORLD_W - viewW()));
+
+  // 主角元素：白色小方块 + 黑眼睛 +（备用）晕眩眼与"朝上"眼。剧情与挑战共用
+  // 微表情：冲刺时眯眼咬牙、从高处急坠时瞪圆张嘴。过场（坠落/挣脱/习得）里一律不叠表情，
+  // 那几段有自己的朝向与晕眩演出
+  function heroMood(){
+    if(!hero.onGround) fallPeak = Math.min(fallPeak, hero.y);
+    else fallPeak = hero.y;
+    if(introPhase !== 'free' || learn) return '';
+    if(chalOn && chal.dashT > 0) return 'dash';
+    // "从高处落下"：下坠速度够快、且这一路已经掉了 150 以上（约三层台阶）才瞪眼
+    if(!hero.onGround && hero.vy > 560 && hero.y - fallPeak > 150) return 'fall';
+    return '';
+  }
+  function syncHeroFace(){
+    if(faceSet !== hero.face){ faceSet = hero.face; heroEl.setAttribute('data-face', hero.face); }
+    const m = heroMood();
+    if(moodSet !== m){ moodSet = m; heroEl.setAttribute('data-mood', m); }
+  }
+  function mkHero(){
+    const el = mk('g', {id:'hero', 'data-face':'right'});
+    el.appendChild(mk('rect', {x:0, y:22, width:30, height:30, rx:3, class:'hero-body'}));
+    const eyeWrap = mk('g', {class:'eye-wrap'});
+    eyeWrap.appendChild(mk('rect', {x:12, y:33, width:6, height:8, rx:3, class:'hero-eye'}));
+    // 晕眩眼：两条交叉线。挣脱落地后替换掉普通眼睛
+    const xEye = mk('g', {class:'x-eye'});
+    xEye.appendChild(mk('line', {x1:10, y1:31.5, x2:20, y2:41.5, stroke:'#0b1219',
+      'stroke-width':1.7, 'stroke-linecap':'round'}));
+    xEye.appendChild(mk('line', {x1:20, y1:31.5, x2:10, y2:41.5, stroke:'#0b1219',
+      'stroke-width':1.7, 'stroke-linecap':'round'}));
+    eyeWrap.appendChild(xEye);
+    el.appendChild(eyeWrap);
+    // "朝上"表情：两只贴在方块上部的眼睛（习得二段跳的过场里用）
+    const upEye = mk('g', {class:'up-eye'});
+    upEye.appendChild(mk('rect', {x:8,  y:27, width:5, height:7, rx:2.5, class:'hero-eye'}));
+    upEye.appendChild(mk('rect', {x:17, y:27, width:5, height:7, rx:2.5, class:'hero-eye'}));
+    el.appendChild(upEye);
+    // 微表情：一组"眯眼 + 瞪眼"、一组"咬牙 + 张嘴"。默认全隐藏，
+    // 由 #hero 的 data-mood（dash / fall）切换显隐，和上面的晕眩眼、朝上眼互不干扰
+    const mEye = mk('g', {class:'mood-eye'});
+    mEye.appendChild(mk('rect', {x:10.5, y:35.6, width:9, height:2.6, rx:1.3, class:'hero-eye-slit'}));
+    mEye.appendChild(mk('ellipse', {cx:16.4, cy:36.8, rx:5, ry:4.6, class:'hero-eye-wide'}));
+    mEye.appendChild(mk('circle', {cx:18.4, cy:35.2, r:1.4, class:'hero-glint'}));
+    el.appendChild(mEye);
+    const mMouth = mk('g', {class:'mood-mouth'});
+    mMouth.appendChild(mk('path', {d:'M11 44.4 L21 44.4', class:'hero-mouth'}));       // 咬牙：一短横
+    mMouth.appendChild(mk('ellipse', {cx:16, cy:45.8, rx:2.9, ry:2.5, class:'hero-mouth-open'}));
+    el.appendChild(mMouth);
+    return el;
+  }
 
   // 切换到某一关：把该关的宽度/地形/检查点/出生点/终点换到全局，并同步世界层的尺寸
   function applyLevel(n){
@@ -1508,6 +2171,11 @@
       const gx0 = SOLIDS[i][0] + SOLIDS[i][2], gx1 = SOLIDS[i + 1][0];
       if(gx1 <= gx0) continue;
       gTerrain.appendChild(mk('rect', {x:gx0 - 6, y:700, width:gx1 - gx0 + 12, height:200, class:'abyss'}));
+      // 沟的两壁各描一条竖边（只描落地层那一侧），否则深色地面和背景糊成一片，看不出这里是悬崖
+      if(SOLIDS[i][4] === 'g')
+        gTerrain.appendChild(mk('line', {x1:gx0, y1:SOLIDS[i][1], x2:gx0, y2:WORLD_H - 8, class:'edge-dim'}));
+      if(SOLIDS[i + 1][4] === 'g')
+        gTerrain.appendChild(mk('line', {x1:gx1, y1:SOLIDS[i + 1][1], x2:gx1, y2:WORLD_H - 8, class:'edge-dim'}));
     }
 
     SOLIDS.forEach(([x, y, w, h, type]) => {
@@ -1595,43 +2263,76 @@
       altar.appendChild(mk('line', {x1:ax + 25, y1:base - 29, x2:ax + aw - 25, y2:base - 29, class:'edge-dim'}));
       altar.appendChild(mk('line', {x1:ax + 50, y1:base - 43, x2:ax + aw - 50, y2:base - 43, class:'edge-dim'}));
       gProps.appendChild(altar);
-      // PRESS E 提示也挂在祭坛上方的世界坐标处
+      // PRESS E 挂在祭坛上方。位置要抬到终点信标光环的上方（光环顶边 = GOAL.y + 36 - 54），
+      // 否则会被信标的亮环、核心亮点和浮光盖住。
       altarHint.style.left = (ALTAR.x + ALTAR.w / 2).toFixed(1) + 'px';
-      altarHint.style.bottom = (WORLD_H - (base - 44 - 30)).toFixed(1) + 'px';
+      altarHint.style.bottom = (WORLD_H - (GOAL.y + 36 - 54 - 24)).toFixed(1) + 'px';
     }
 
-    // 终点大门：两根立柱 + 楣石 + 一扇可上移收进楣石的门板（习得二段跳后开启）
+    // 终点拱门：半圆券顶的门洞 + 双线券框 + 沿券弧缓流的虚线 + 券顶对位刻度 + 门内缓升浮光，
+    // 全部沿用终点信标那套描线语言（细线、极淡填充、辉光），而不是方正的石头门框。
     if(GATE){
-      const gx = GATE.x, gy = GATE.y, gw = GATE.w, gh = GATE.h;
+      const cx = GATE.cx, base = GATE.base, hw = GATE.hw, sp = GATE.spring;
+      const sy = base - sp;                       // 起券线：券弧从这里往上收
+      const T = 13;                               // 券框宽度
+      // 券门轮廓：左柱 → 半圆券顶 → 右柱，一笔画成（A r r 0 0 1 顺时针掠过券顶）
+      const arch = (r, bottom) => 'M' + (cx - r) + ' ' + bottom + ' V' + sy +
+        ' A' + r + ' ' + r + ' 0 0 1 ' + (cx + r) + ' ' + sy + ' V' + bottom;
+      const inner = arch(hw, base);               // 门洞
+      const dr = hw + T + 9;                      // 虚线券弧的半径，比券框再外扩一点
+
       const gate = mk('g', {class:'gate'});
-      gate.appendChild(mk('rect', {x:gx, y:gy, width:6, height:gh, class:'slab-f'}));
-      gate.appendChild(mk('rect', {x:gx + gw - 6, y:gy, width:6, height:gh, class:'slab-f'}));
-      gate.appendChild(mk('rect', {x:gx - 5, y:gy - 9, width:gw + 10, height:13, class:'slab-f'}));
-      gate.appendChild(mk('path', {d:'M' + gx + ' ' + (gy + gh) + ' V' + gy, class:'edge'}));
-      gate.appendChild(mk('path', {d:'M' + (gx + gw) + ' ' + (gy + gh) + ' V' + gy, class:'edge'}));
-      gate.appendChild(mk('rect', {x:gx + 6, y:gy, width:gw - 12, height:gh, class:'gate-door'}));
+      gate.appendChild(mk('circle', {cx:cx, cy:sy - 6, r:hw + T + 14, class:'gate-halo'})); // 券顶柔光，只往上洒
+      gate.appendChild(mk('path', {d:inner, class:'gate-passage'}));
+      gate.appendChild(mk('path', {d:arch(hw + 4, base), class:'gate-frame-in'}));
+      gate.appendChild(mk('path', {d:arch(hw + T, base), class:'gate-frame'}));
+      gate.appendChild(mk('path', {d:'M' + (cx - dr) + ' ' + sy +
+        ' A' + dr + ' ' + dr + ' 0 0 1 ' + (cx + dr) + ' ' + sy, class:'gate-dash'}));
+      [0.16, 0.34, 0.5, 0.66, 0.84].forEach((f, i) => {   // 券顶等分的对位刻度，呼应信标的四角刻度
+        const a = Math.PI * (1 - f), r1 = dr + (i % 2 ? 5 : 3), r2 = r1 + 10;
+        gate.appendChild(mk('line', {
+          x1:(cx + Math.cos(a) * r1).toFixed(1), y1:(sy - Math.sin(a) * r1).toFixed(1),
+          x2:(cx + Math.cos(a) * r2).toFixed(1), y2:(sy - Math.sin(a) * r2).toFixed(1),
+          class:'gate-tick'}));
+      });
+      gate.appendChild(mk('circle', {cx:cx, cy:sy - dr, r:3.2, class:'gate-core'}));   // 券顶核心亮点
+
+      // 门内缓升的浮光，与信标柱内的光点同源；闭合时收起，开启时透出
+      for(let n = 0; n < 14; n++){
+        const a = Math.random() * Math.PI * 2, rad = 6 + Math.random() * (hw - 10);
+        const p = mk('g', {class:'goal-mote gate-mote', style:
+          '--x:' + (cx + Math.cos(a) * rad).toFixed(1) + 'px;' +
+          '--y:' + (base - 12 - Math.random() * (sp + hw - 26)).toFixed(1) + 'px;' +
+          '--dx:' + ((Math.random() - .5) * 12).toFixed(1) + 'px;' +
+          '--dy:' + (-30 - Math.random() * 50).toFixed(1) + 'px;' +
+          '--dur:' + (3.4 + Math.random() * 3.4).toFixed(2) + 's;' +
+          '--del:' + (-Math.random() * 6.8).toFixed(2) + 's'});
+        const mr = .8 + Math.random() * 1.3;
+        p.appendChild(mk('circle', {cx:0, cy:0, r:(mr * 2.4).toFixed(2), opacity:'.15'}));
+        p.appendChild(mk('circle', {cx:0, cy:0, r:mr.toFixed(2)}));
+        gate.appendChild(p);
+      }
+
+      if(GATE.door){
+        // 门扇：与门洞同形的暗色石板 + 一道对缝 + 两道石线
+        const door = mk('g', {class:'gate-door'});
+        door.appendChild(mk('path', {d:inner, class:'gate-door-slab'}));
+        door.appendChild(mk('line', {x1:cx, y1:(sy - hw * .5).toFixed(1), x2:cx, y2:base,
+          class:'gate-door-seam'}));
+        [0.32, 0.64].forEach(f => door.appendChild(mk('line', {
+          x1:cx - hw, y1:(base - sp * f).toFixed(1),
+          x2:cx + hw, y2:(base - sp * f).toFixed(1), class:'gate-door-seam'})));
+        gate.appendChild(door);
+      }else{
+        gate.classList.add('open');       // 本关终点本就通行：门洞常亮
+      }
+
       gProps.appendChild(gate);
       gateEl = gate;
     }
 
     // 玩家：白色小方块 + 黑眼睛（方块底边对齐碰撞盒底部，即"脚"所在处）
-    heroEl = mk('g', {id:'hero', 'data-face':'right'});
-    heroEl.appendChild(mk('rect', {x:0, y:22, width:30, height:30, rx:3, class:'hero-body'}));
-    const eyeWrap = mk('g', {class:'eye-wrap'});
-    eyeWrap.appendChild(mk('rect', {x:12, y:33, width:6, height:8, rx:3, class:'hero-eye'}));
-    // 晕眩眼：两条交叉线。挣脱落地后替换掉普通眼睛
-    const xEye = mk('g', {class:'x-eye'});
-    xEye.appendChild(mk('line', {x1:10, y1:31.5, x2:20, y2:41.5, stroke:'#0b1219',
-      'stroke-width':1.7, 'stroke-linecap':'round'}));
-    xEye.appendChild(mk('line', {x1:20, y1:31.5, x2:10, y2:41.5, stroke:'#0b1219',
-      'stroke-width':1.7, 'stroke-linecap':'round'}));
-    eyeWrap.appendChild(xEye);
-    heroEl.appendChild(eyeWrap);
-    // "朝上"表情：两只贴在方块上部的眼睛（习得二段跳的过场里用）
-    const upEye = mk('g', {class:'up-eye'});
-    upEye.appendChild(mk('rect', {x:8,  y:27, width:5, height:7, rx:2.5, class:'hero-eye'}));
-    upEye.appendChild(mk('rect', {x:17, y:27, width:5, height:7, rx:2.5, class:'hero-eye'}));
-    heroEl.appendChild(upEye);
+    heroEl = mkHero();
     gPlayer.appendChild(heroEl);
 
     // 过场石块层：挂在 player 之后，飞散时能盖住玩家下半身
@@ -1651,6 +2352,7 @@
     if(!dx) return;
     hero.x += dx;
     for(const s of rects){
+      if(s.oneWay) continue;                 // 单向平台只从上方踩得住，侧面不该拦人（从下面穿过去时不能被卡住）
       if(!overlaps(s)) continue;
       hero.x = dx > 0 ? s.x0 - HERO_W - EPS : s.x1 + EPS;
       hero.vx = 0;
@@ -1658,9 +2360,14 @@
   }
   function moveY(dy){
     if(!dy) return;
+    const py = hero.y;                       // 移动前的顶边：单向平台要靠它判断"是从上面落下来的"
     hero.y += dy;
     hero.onGround = false;
     for(const s of rects){
+      if(s.oneWay){                          // 单向平台：上升时直接穿过去；下落时只有原本在板面以上才踩得住
+        if(dy < 0) continue;
+        if(py + HERO_H > s.y0 + 1) continue;
+      }
       if(!overlaps(s)) continue;
       if(dy > 0){ hero.y = s.y0 - HERO_H - EPS; hero.vy = 0; hero.onGround = true; }
       else { hero.y = s.y1 + EPS; hero.vy = 0; }
@@ -1883,7 +2590,7 @@
     lastT = performance.now();             // 丢弃过场期间累积的时间差，避免交还瞬间跳一大步
   }
 
-  // ---------- 习得二段跳：推近 → 主角缓慢上升（眼睛朝上）→ 白光炸开 → 镜头回正 → 居中字幕 + 冷却条 → 大门开启 ----------
+  // ---------- 习得二段跳：推近 → 主角缓慢上升（眼睛朝上）→ 白光炸开 → 镜头回正 → 居中字幕 → 大门开启 ----------
   function atAltar(){
     return !!ALTAR && hero.onGround &&
            hero.x + HERO_W > ALTAR.x && hero.x < ALTAR.x + ALTAR.w;
@@ -1891,7 +2598,7 @@
 
   function startLearn(){
     if(learn || hasDouble) return;
-    learn = { t:0, phase:'rise', fromY:hero.y, barShown:false };
+    learn = { t:0, phase:'rise', fromY:hero.y, bounceN:0 };
     hero.vx = 0; hero.vy = 0; hero.spin = 0; hero.onGround = false;
     cutCamY = hero.y + HERO_H / 2;      // 冻结镜头焦点，主角才会在画面里真的升上去
     altarHint.classList.remove('show');
@@ -1910,28 +2617,49 @@
         whiteout.classList.add('on');           // 白光炸开
       }
     }else if(learn.phase === 'flash'){          // 满屏白光
-      if(learn.t >= LEARN.flash){ learn.t = 0; learn.phase = 'out'; }
-    }else if(learn.phase === 'out'){            // 镜头回正、白光消退
-      if(learn.t >= LEARN.out){
-        learn.t = 0; learn.phase = 'text';
-        hero.y = learn.fromY; hero.vy = 0; hero.onGround = true;
-        hero.face = 'right'; hero.djAvail = true; hero.djCd = 0;
+      if(learn.t >= LEARN.flash){
+        learn.t = 0; learn.phase = 'fall';
         whiteout.classList.remove('on');
+        hero.vy = 0;                            // 白光一退，主角就从上方砸下来
+      }
+    }else if(learn.phase === 'fall'){           // 快速下坠：重力放大，一路砸回地面
+      hero.vy = Math.min(PHYS.maxVy * 1.6, hero.vy + PHYS.grav * LEARN.fallG * dt);
+      hero.y += hero.vy * dt;
+      if(hero.y >= learn.fromY){                // 落地
+        hero.y = learn.fromY;
+        hero.vy = LEARN.bounceVy; learn.bounceN = 0;
+        hero.shake = .16;
+        learn.phase = 'bounce';
+      }
+    }else if(learn.phase === 'bounce'){         // 落地弹跳：重力减半，每次触地留一点速度
+      hero.vy = Math.min(PHYS.maxVy, hero.vy + PHYS.grav * LEARN.bounceG * dt);
+      hero.y += hero.vy * dt;
+      hero.shake = Math.max(0, hero.shake - dt);
+      if(hero.y >= learn.fromY){
+        hero.y = learn.fromY;
+        learn.bounceN = (learn.bounceN || 0) + 1;
+        hero.shake = .14;
+        if(learn.bounceN >= LEARN.bounceN){ learn.t = 0; learn.phase = 'turn'; }
+        else hero.vy = -150;
+      }
+    }else if(learn.phase === 'turn'){           // 转过身站定，眼睛朝右；大门在同一刻打开
+      hero.vy = 0; hero.y = learn.fromY; hero.onGround = true;
+      if(!learn.turned){                        // 只做一次：转身和大门开启要同时发生
+        learn.turned = true;
+        hero.face = 'right';
+        if(gateEl) gateEl.classList.add('open');
+      }
+      hero.shake = Math.max(0, hero.shake - dt);
+      if(learn.t >= LEARN.turn){
+        learn.t = 0; learn.phase = 'out';
         learnTag.classList.add('show');
-        document.body.classList.add('dj');
       }
-    }else if(learn.phase === 'text'){           // 屏幕正中字幕，随后左下角冒出冷却条
-      if(!learn.barShown && learn.t >= LEARN.textWait){
-        learn.barShown = true;
-        djBar.classList.add('show');
-      }
-      if(learn.t >= LEARN.text){
-        learn.t = 0; learn.phase = 'gate';
+    }else if(learn.phase === 'out'){            // 镜头回正 + 字幕保持，两者都完成才交还操作
+      if(learn.t >= LEARN.text && zoomT <= .001){
+        learn = null; cutCamY = null;
         learnTag.classList.remove('show');
-        if(gateEl) gateEl.classList.add('open');   // 终点大门打开
+        hero.vy = 0; hero.onGround = true; hero.face = 'right'; hero.djAvail = true;
       }
-    }else if(learn.phase === 'gate'){           // 大门开后交还操作，走进门里即可进入下一关
-      if(learn.t >= LEARN.gate){ learn = null; cutCamY = null; hero.onGround = true; }
     }
   }
 
@@ -1942,6 +2670,7 @@
     stopLoop();
     flushPlayed();
     fade.classList.remove('quick');
+    clearFadePanel();         // 换关不是结算：黑幕上不留统计和按钮
     fadeMsg.textContent = LEVELS[levelIdx + 1].name;
     fadeSub.textContent = '载入中';
     fade.classList.add('on');
@@ -1950,9 +2679,10 @@
 
   function step(dt){
     if(cutLock > 0) cutLock = Math.max(0, cutLock - dt);
-    // 过场镜头：坠落、卡住、弹跳、习得二段跳的上升阶段都推近到主角身上，交还操作后平滑收回
+    // 过场镜头：坠落、卡住、弹跳，以及习得二段跳的上升→白光→下坠→弹跳→转身全程都推近；
+    // 等大门打开进入"镜头回正"阶段，相机才平滑收回
     const zoomIn = (introPhase === 'fall' || introPhase === 'stuck' || introPhase === 'bounce') ||
-                   (learn && (learn.phase === 'rise' || learn.phase === 'flash'));
+                   (learn && learn.phase !== 'out');
     const zt = zoomIn ? 1 : 0;
     if(zoomT !== zt) zoomT = zt > zoomT ? Math.min(zt, zoomT + dt * 2.0)
                                         : Math.max(zt, zoomT - dt * 1.6);
@@ -1978,7 +2708,6 @@
     else if(hero.vx > target) hero.vx = Math.max(target, hero.vx - acc * dt);
 
     // 土狼时间与跳跃缓冲：让"明明按了却没反应"的情况消失
-    hero.djCd = Math.max(0, hero.djCd - dt);
     if(hero.onGround) hero.djAvail = true;                // 落地即补充空中那一跳
     hero.coyote = hero.onGround ? PHYS.coyote : Math.max(0, hero.coyote - dt);
     hero.buffer = Math.max(0, hero.buffer - dt);
@@ -1988,11 +2717,12 @@
       hero.coyote = 0;
       hero.buffer = 0;
       hero.djAvail = true;                               // 离地后二段跳可用
-    }else if(hero.buffer > 0 && hasDouble && hero.djAvail && !hero.onGround && hero.djCd <= 0){
+      heroJumps++;
+    }else if(hero.buffer > 0 && hasDouble && hero.djAvail && !hero.onGround){
       hero.vy = PHYS.jumpV;                              // 二段跳：空中再给一次初速
       hero.buffer = 0;
       hero.djAvail = false;
-      hero.djCd = DJ.cd;
+      heroJumps++;
     }
     hero.vy = Math.min(PHYS.maxVy, hero.vy + PHYS.grav * dt);
 
@@ -2017,7 +2747,7 @@
         altarHint.classList.toggle('show', on);
         goalEl.classList.toggle('on', on);
       }
-      if(GATE && hasDouble && hero.x + HERO_W > GATE.x){ nextLevel(); return; }
+      if(GATE && hasDouble && hero.x + HERO_W / 2 > GATE.cx){ finishLevel(); return; }   // 走进大门 = 本关结束，出结算
     }else if(hero.x + HERO_W > GOAL.x && hero.x < GOAL.x + GOAL.w &&
              hero.y + HERO_H > GOAL.y && hero.y < GOAL.y + GOAL.h){ finishLevel(); return; }
 
@@ -2044,7 +2774,14 @@
 
   // 镜头：死区跟随 + 平滑，钳制到世界边界
   function updateCam(dt){
-    const vw = viewW(), px = hero.x + HERO_W / 2, half = vw / 2, dead = vw * 0.32;
+    const vw = viewW();
+    if(chalOn){
+      // 挑战模式不做死区：把主角钉在视口 58% 处，身后永远留出黑洞的画面
+      const want = clampCam(hero.x + HERO_W / 2 - vw * CHAL.frameX);
+      camX += (want - camX) * Math.min(1, dt * 7);
+      return;
+    }
+    const px = hero.x + HERO_W / 2, half = vw / 2, dead = vw * 0.32;
     let want = camX;
     if(px - camX < half - dead / 2)      want = px - half + dead / 2;
     else if(px - camX > half + dead / 2) want = px - half - dead / 2;
@@ -2060,7 +2797,7 @@
     }
     heroEl.setAttribute('transform', 'translate(' + hx.toFixed(2) + ' ' + hy.toFixed(2) +
       ') rotate(' + hero.spin.toFixed(2) + ' 15 37)');   // 绕可见方块中心旋转
-    if(faceSet !== hero.face){ faceSet = hero.face; heroEl.setAttribute('data-face', hero.face); }
+    syncHeroFace();                                      // 朝向 + 微表情一起同步
     stage.style.setProperty('--camx', camX.toFixed(2));
     // 过场推近：以主角为中心缩放。zoomT=0 时写回恒等变换，完全不影响正常镜头
     const e = zoomT * zoomT * (3 - 2 * zoomT);
@@ -2088,12 +2825,6 @@
     const info = '存档 ' + pad(curSlot + 1) + ' · ' + clock(Math.floor(elapsed)) +
                  ' · 检查点 ' + Math.max(0, lastCP + 1) + '/' + CPS.length;
     if(info !== hudCache){ hudCache = info; hudInfo.textContent = info; }
-    // 二段跳冷却条：条满=可用，用掉后随 CD 回填
-    if(hasDouble){
-      const p = Math.round(Math.max(0, Math.min(1, 1 - hero.djCd / DJ.cd)) * 1000) / 10;
-      const w = p.toFixed(1) + '%';
-      if(djFill.style.width !== w) djFill.style.width = w;
-    }
   }
 
   function tick(t){
@@ -2101,9 +2832,26 @@
     if(!lastT) lastT = t;
     const dt = Math.min((t - lastT) / 1000, .033);   // 钳制 dt，防止切标签页回来时一帧穿墙
     lastT = t;
-    step(dt);
-    updateCam(dt);
-    render();
+    if(chalOn){
+      const c = chal;
+      if(c && c.dying){
+        // 死亡：世界就此冻住，只演主角处那场爆炸；爆炸演完才弹结算窗
+        stepFx(dt);
+        c.deathT -= dt;
+        updateCam(dt);
+        renderChallenge();
+        if(c.deathT <= 0) showChalSummary();
+      }else{
+        // 倒数期间只走摄像机与倒数数字：整个世界（黑洞、火球、平台）都冻结在起手位置，
+        // 黑洞不会在这 3 秒里白蹭掉近千单位。开场黑幕还盖着时干脆不数，保证 3-2-1 每一格都是满的
+        if(countdown > 0){
+          if(!fade.classList.contains('on')) countdown = Math.max(0, countdown - dt);
+        }else stepChallenge(dt);
+        updateCam(dt);
+        if(chalOn){ renderChallenge(); drawCountdown(); }
+      }
+    }
+    else { step(dt); updateCam(dt); render(); }
     if(!running) return;                             // step 里可能已经结束了关卡
     rafId = requestAnimationFrame(tick);
   }
@@ -2114,28 +2862,37 @@
   function voidDeath(){
     if(dead) return;
     dead = true;
+    heroDeaths++;
     hero.vx = 0; hero.vy = 0;
     burstFx(hero.x + HERO_W / 2, WORLD_H - 34);   // 主角已在画面外，效果落在它消失的那条水平线上
     voidHint.classList.add('show');
   }
 
   // 粒子爆炸：一圈向外飞散的白点 + 一道外扩冲击环。
-  // 用 JS 逐帧推进（短命效果，且需要重力/阻尼），结束后整层清空
-  function burstFx(x, y){
+  // 用 JS 逐帧推进（短命效果，且需要重力/阻尼），结束后整层清空。
+  // extra 是额外的类名：引爆黄球时传 'orb'、死亡时传 'death'，同一套粒子换配色/规模。
+  // opt 用来放大这场爆炸（粒子数 n / 初速 spd+spdVar / 环半径 ring / 环时长 ringLife /
+  // 粒子上限寿命 life+lifeVar / 整层保留时长 hold），缺省值就是原来那一发
+  function burstFx(x, y, extra, opt){
+    const o = opt || {};
+    const N = o.n || 34;
+    const spMin = o.spd || 70, spVar = o.spdVar != null ? o.spdVar : 210;
     gFx.textContent = '';
     fxP = []; fxT = 0; fxRing = null;
-    fxRing = {el:mk('circle', {cx:x, cy:y, r:10, class:'fx-ring'}), x, y, t:0};
+    fxTmax = o.hold || 1.25;
+    const tag = extra ? ' ' + extra : '';
+    fxRing = {el:mk('circle', {cx:x, cy:y, r:10, class:'fx-ring' + tag}), x, y, t:0,
+              max:o.ring || 96, life:o.ringLife || .55};
     gFx.appendChild(fxRing.el);
-    const N = 34;
     for(let i = 0; i < N; i++){
       const a = (i / N) * Math.PI * 2 + Math.random() * .6;
-      const sp = 70 + Math.random() * 210;
+      const sp = spMin + Math.random() * spVar;
       const r = 1.1 + Math.random() * 2.2;
-      const g = mk('g', {class:'fx-p'});
+      const g = mk('g', {class:'fx-p' + tag});
       g.appendChild(mk('circle', {cx:0, cy:0, r:(r * 2.6).toFixed(2), opacity:'.16'}));
       g.appendChild(mk('circle', {cx:0, cy:0, r:r.toFixed(2)}));
       gFx.appendChild(g);
-      const life = .5 + Math.random() * .5;
+      const life = (o.life || .5) + Math.random() * (o.lifeVar != null ? o.lifeVar : .5);
       fxP.push({g, x, y, vx:Math.cos(a) * sp, vy:Math.sin(a) * sp * .8 - 30, life, maxLife:life});
     }
   }
@@ -2156,11 +2913,11 @@
     }
     if(fxRing){
       fxRing.t += dt;
-      const k = Math.min(1, fxRing.t / .55);
-      fxRing.el.setAttribute('r', (10 + 96 * k).toFixed(1));
+      const k = Math.min(1, fxRing.t / (fxRing.life || .55));
+      fxRing.el.setAttribute('r', (10 + (fxRing.max || 96) * k).toFixed(1));
       fxRing.el.setAttribute('opacity', Math.max(0, .7 * (1 - k)).toFixed(3));
     }
-    if(fxT > 1.25){ gFx.textContent = ''; fxP = []; fxRing = null; fxT = 0; }
+    if(fxT > fxTmax){ gFx.textContent = ''; fxP = []; fxRing = null; fxT = 0; fxTmax = 1.25; }
   }
 
   function respawn(){
@@ -2171,7 +2928,7 @@
     const p = lastCP >= 0 ? {x:CPS[lastCP].x - 15, y:CPS[lastCP].y - HERO_H - 1} : SPAWN;
     hero.x = p.x; hero.y = p.y;
     hero.vx = 0; hero.vy = 0; hero.onGround = false; hero.coyote = 0; hero.buffer = 0;
-    hero.djAvail = false; hero.djCd = 0;
+    hero.djAvail = false;
     camX = clampCam(hero.x - viewW() * 0.32);
     lastT = 0;
     render();
@@ -2192,12 +2949,22 @@
     writeSaves();
   }
 
+  // 通关进度：把存档推进到第 n 关的开头（只进不退），继续游戏时就从那里开始
+  function saveProgress(n){
+    if(curSlot < 0) return;
+    const sv = saves[curSlot];
+    if(!sv || n <= (sv.level || 0)) return;
+    sv.level = n;
+    writeSaves();
+  }
+
   function enterLevel(i, withIntro){
     curSlot = i;
     const sv = saves[i];
     playedBase = sv ? (sv.played || 0) : 0;
     playedAcc = 0;
-    loadLevel(0, withIntro);           // 每次从头开始都回到第一关
+    // 存档里记着进度：通关第一关后存的是"第二关开头"，继续游戏就从那里开始
+    loadLevel(sv && sv.level ? sv.level : 0, withIntro);
   }
 
   // 装载第 n 关：换地形、复位过场与习得状态、拉开幕布
@@ -2205,6 +2972,7 @@
     applyLevel(n);
     sinceSave = 0;
     elapsed = 0; lastCP = -1;
+    heroDeaths = 0; heroJumps = 0;    // 统计按关重置
 
     buildLevel();
     cpEls.forEach(g => g.classList.remove('on', 'lit'));
@@ -2231,13 +2999,10 @@
     whiteout.classList.remove('on');
     learnTag.classList.remove('show');
     altarHint.classList.remove('show');
-    hero.djAvail = false; hero.djCd = 0;
-    if(n === 0){
-      hasDouble = false;
-      document.body.classList.remove('dj');
-      djBar.classList.remove('show');
-      if(gateEl) gateEl.classList.remove('open');
-    }
+    hero.djAvail = false;
+    // 二段跳是剧情给的：第一关从头开始时收回，第二关及以后默认已习得（直接从存档接着玩也成立）
+    hasDouble = n > 0;
+    if(!hasDouble && gateEl) gateEl.classList.remove('open');
 
     if(withIntro){ hero.x = SPAWN.x; hero.y = INTRO.fallY; hero.vy = INTRO.fallV; }
     else         { hero.x = SPAWN.x; hero.y = SPAWN.y;    hero.vy = 0; }
@@ -2259,6 +3024,7 @@
         fade.classList.remove('on');
         fadeMsg.textContent = '';
         fadeSub.textContent = '';
+        clearFadePanel();
         if(introPhase === 'wait') introPhase = 'fall';   // 幕布拉开后才起坠，别让黑幕挡住坠落
       }
     }, 620);
@@ -2286,10 +3052,13 @@
     whiteout.classList.remove('on');
     learnTag.classList.remove('show');
     altarHint.classList.remove('show');
-    document.body.classList.remove('dj');
-    djBar.classList.remove('show');
     if(gateEl) gateEl.classList.remove('open');
-    hero.djAvail = false; hero.djCd = 0;
+    hero.djAvail = false;
+    // 挑战模式的状态一并收尾，回标题时不会把黑洞/抓钩/记分条带过去
+    chalOn = false; holeEl = null; holeWarpA = holeWarpB = holeSwirl = null;
+    document.body.classList.remove('chal');
+    dangerEl.classList.remove('on');
+    gOrbs.textContent = ''; gRope.textContent = ''; gHole.textContent = '';
     stage.style.setProperty('--camx', '0');   // 镜头归零，标题背景回到原构图
     elapsed = 0; lastCP = -1; sinceSave = 0; curSlot = -1;
     cpEls.forEach(g => g.classList.remove('on', 'lit'));
@@ -2297,16 +3066,1103 @@
     for(const k in keys) delete keys[k];   // 清空按键，避免带着方向键回到标题
   }
 
+  // 关卡结算：每关结束都走这里（死亡/跳跃/时间 + 保存并退出 / 下一关）
   function finishLevel(){
     if(mode !== 'play') return;
     mode = 'clear';
     goalEl.classList.add('on');
     stopLoop();
     flushPlayed();
+    // 结算窗口：章节名 + 已飞升，下面三行统计（幕布不再承载结算，只留给换关转场）
+    sumMsg.textContent = LEVELS[levelIdx].name;
+    sumSub.textContent = '已飞升';
+    setFadeStats([
+      ['死亡次数', heroDeaths],
+      ['跳跃次数', heroJumps],
+      ['使用时间', clock(Math.floor(elapsed))]
+    ]);
+    // 按钮：通关这一关就把存档推进到下一关开头；最后一关没有下一关、也没有可存的进度，只留"退出"
+    const last = levelIdx >= LEVELS.length - 1;
+    if(!last) saveProgress(levelIdx + 1);
+    fadeBtns[0].textContent = last ? '退出' : '保存并退出';
+    fadeBtns[1].style.display = last ? 'none' : '';
+    fSel = last ? 0 : 1;
+    syncFadeBtns();
+    fadeKind = 'level';
+    fadeActsOn = true;
+    fadeFoot.innerHTML = '<span><b>A D</b> 切换</span><span><b>ENTER</b> 确认</span>' +
+      '<span><b>ESC</b> ' + (last ? '退出' : '保存并退出') + '</span>';
+    fadeActs.classList.add('show');
+    fadeFoot.classList.add('show');
+    showSum();
+  }
+
+  // ==================== 挑战模式：无尽跑酷 ====================
+  // 一条追在身后的黑洞逼着主角一直往右跑，随机地形边跑边生成，抓住黄球、蹬墙、冲刺都能续命。
+  //
+  // 为什么不会生成出"过不去"的死局：
+  //   1) 地面高度恒定 floor=CF（SOLIDS1[0][1] 原值），所有障碍都立在这一条基准线上；
+  //   2) 每个路段都是自足的单元：助跑段 + 一个障碍 + 落点段，段内两段地板被整段实心地板连通
+  //      （runs 是按 [0, 端点] 生长的，所以实心地板只多不少，绝不会生成"中间空一截"的坑）；
+  //   3) 每段只放一个主障碍，段与段之间必然隔着一段纯地板作助跑与落点；
+  //   4) 因此最深的一条沟也一定能在助跑段起点前起跳 —— 不需要"上一段留速度"。
+  //
+  // 障碍尺寸按本模式自己的能力反推（下面的横距是按 CHAL 的常数数值积分实测出来的）：
+  //   单跳        顶点 125、最高速 330 → 横距 ≈ 213
+  //   二段跳(顶点补跳) 顶点 ≈ 235        → 横距 ≈ 352
+  //   冲刺(760@.26s) + 二段跳            → 横距 ≈ 463
+  //   蹬墙跳每蹬一次抬升 ≈ 133，可反复蹬  → 竖直墙能爬
+  //   抓钩 拽速 1050，射程 620           → 超出冲刺+二段跳的沟只能靠它
+  //   弹簧 弹速 1320                     → 顶点 360，够得到 260 高的墙顶
+  // 新地形参考《蔚蓝》：钉刺踩到即死、弹簧把人弹上去、碎裂方块踩上 .38s 就塌、
+  // 单向平台从下往上穿得过去、移动平台横渡 500 宽的深渊
+  const CF = 720;                                   // 地面基准线（地板顶面）
+  const CHAL = {
+    // 移动
+    maxVx:330, accG:2600, accA:1500, decG:3200, decA:900,
+    grav:2400, jumpV:-780, djVy:-720, maxVy:1250,
+    cutV:-260, coyote:.10, buffer:.12,
+    // 冲刺：短促提速，覆盖水平速度
+    dashVx:760, dashT:.26, dashCd:.85,
+    // 蹬墙：朝墙方向推着就缓慢下滑；贴墙按空格则蹬开
+    wallVy:-800, wallPush:130, wallSlide:150,
+    // 抓钩：默认射程（黄球可以自带 range 覆盖它），视线被地形挡住也勾不到
+    hookRange:620, hookPull:1050,
+    orbBurstVy:-1240,                                   // 在黄球上起跳＝引爆它：一次远超普通跳的暴冲（顶点 320，约普通跳的 2.5 倍；
+                                                        // 球顶 y=366，所以顶点停在 y=46，主角全程留在画面内）
+    orbBurstPts:200,                                    // 引爆一颗黄球的额外加分（这是技术动作的奖励，与技能分一起算）
+    // 距离爬升：每跑 500 米，黑洞与主角的速度一起 ×1.2。两者等比例提升，所以"黑洞相对主角"
+    // 的快慢关系不变，变的只是整局的节奏 —— 跑得越远，一切都越快
+    rampStep:500, rampMul:.2,
+    // 死亡：主角处炸开一场演出（比普通爆散更大），演完才弹结算窗；
+    // 无障碍（reduced-motion）下跳过这场演出，直接出结算
+    deathDur:1.15, deathN:64, deathRing:150,
+    countT:3,                                           // 倒数：进入挑战、以及暂停后继续游戏，各来一次 3-2-1
+                                                        // （倒数期间整个世界冻结在起手位置，黑洞不会白蹭）
+    // 障碍密度：每 1000 米提一档（但 500 米就先提一档，别让前 1000 米太舒服）；
+    // 档位越高，带障碍的路段被抽中的权重越大、"喘气"的空地越少
+    obFrom:500, obStep:1000,
+    // 火球：跑到 fireStart 米之后才开火，此后每隔一小段时间从画面右侧飞来一小排，
+    // 高度贴近地面、只能靠跳过去，碰到即死。它按规则保持自己的固定速度（提速只给黑洞与主角）——
+    // 这很关键：火球的速度若也乘倍率，加上主角变快，它掠过屏幕的时间会缩到 0.3 秒以内，变成"看到就死"
+    fireStart:1000, fireGap:3.2, fireGapX:240, fireN:2,
+    fireV:520, fireR:15, fireY:664, fireYJit:18, fireBob:6,
+    // 黑洞：一个圆（圆心锁在世界中线、半径 270 —— 下缘正好切到地面线，所以主角能到的
+    // 每个高度都还在视界里，不可能从上下绕过去），只沿 x 轴推进
+    holeR:270, holeCy:WORLD_H / 2, holeV:280, holeLeash:1250,
+    holeStart:-780,                                     // 开局黑洞的起点（世界坐标，画面左外）。
+                                                        // 主角出生在 x=110、贴地时致死带是 ±159，所以起点越左、
+                                                        // 留给玩家的起手时间越长：-780 → 约 2.6 秒后才够到主角
+    holeSpin:14,                                        // 时空环的缓转速度（度/秒）；内环反向、碎屑更快
+    // 钉刺／弹簧／碎裂方块／移动平台
+    springVy:-1320,                                     // 弹簧弹速：顶点 352
+    crumbHold:.38,                                      // 碎裂方块踩上去后坚持多久就塌
+    moverV:260,                                         // 移动平台横移速度
+    // 记分
+    distDiv:10,
+    skillPts:{dj:16, dash:26, hook:40, wall:22, spring:14},   // 各技能的基础分
+    // 拾取球：白球 +100；金球 +150 并开启 10 秒"得分 ×1.5"窗口（窗口里再吃到金球就把时长续满）。
+    // 球撒在这一段最宽的那条畅行地板上，略高于地面，跑过去顺手就能吃到
+    pickWhite:100, pickGold:150, goldWin:10, goldMul:.5,
+    pickOdds:.3, pickGoldOdds:.08, pickN:3, pickGap:46, pickUp:46, pickR:8,
+    frameX:.58                                          // 镜头把主角放在视口 58% 处，给身后的黑洞留出画面
+  };
+  // 总分 = 距离分（按 distDiv 折算）+ 技能分 + 拾取分 + 金球窗口里的额外半倍。
+  // 已经没有任何连击倍率了：所有加分都只走 awardPts 这一个入口，窗口开着时才补那 0.5 倍
+
+  let held = null;                                    // 跨局保留的成绩：最高分 / 上次得分
+  const CHAL_KEY = 'echo.challenge.v1';
+
+  function loadHeld(){
+    if(!held) held = {best:0, last:0};
+    try{
+      const raw = localStorage.getItem(CHAL_KEY);
+      if(!raw) return;
+      const d = JSON.parse(raw);
+      if(d && typeof d === 'object'){
+        held.best = Math.max(0, Math.floor(d.best) || 0);
+        held.last = Math.max(0, Math.floor(d.last) || 0);
+      }
+    }catch(e){ /* 存档不可用时静默降级，不影响游戏 */ }
+  }
+  function saveHeld(){
+    try{ localStorage.setItem(CHAL_KEY, JSON.stringify({best:held.best, last:held.last})); }
+    catch(e){ /* 同上 */ }
+  }
+
+  // ---------- 路段生成 ----------
+  // 每个路段返回 {w:段宽, runs:[[起点x,宽]...]（地板，按 [0,端点] 生长）, blocks:[[x,y,w,h]...],
+  //   oneways:[[x,y,w,h]...]（可穿）， crumbles:[[x,y,w,h]...]（踩上会塌）, pad:[[x,y,w,h]...]（弹簧，非实体触发）,
+  //   spikes:[[x,y,w,h]...]（碰到即死）, movers:[[左端x,右端x,顶边y,底边y]...]（横移渡板）, orbs:[[x,y,r,range]...]}
+  const SEGS = {
+    // 空地：纯地板 + 一个一跨即过的矮墩，纯粹让主角喘口气、也是黑洞唯一的追近窗口
+    flat(x){
+      return {w:520, runs:[[x, 520]], blocks:[[x + 322, CF - 46, 56, 46]], orbs:[]};
+    },
+    // 二段跳：225 助跑 → 270 宽的沟 → 落点。沟里不放任何落脚点，单跳过不去
+    // 单跳 212 差 58；二段跳 352 有 82 余量，起跳点还有 110 单位容错
+    dj(x){
+      return {w:900, runs:[[x, 450], [x + 720, 180]], blocks:[], orbs:[]};
+    },
+    // 冲刺：220 助跑 → 360 宽的沟 → 落点。沟里不放任何落脚点
+    // 二段跳的极限也在 400 上下，所以这段的沟必须盯着冲刺的速度算
+    dash(x){
+      return {w:1020, runs:[[x, 440], [x + 800, 220]], blocks:[], orbs:[]};
+    },
+    // 蹬墙跳：300 高的实心墙，跳不上也绕不过，必须贴墙连蹬上去；墙后是平地，
+    // 不留坑 —— 免得刚爬上来就一脚踩空（爬墙本身已经够难）
+    wall(x){
+      return {w:700, runs:[[x, 700]], blocks:[[x + 220, CF - 300, 90, 300],
+              [x + 520, CF - 44, 120, 44]], orbs:[]};
+    },
+    // 抓钩：640 宽的沟，连冲刺+二段跳的 564 也够不到，沟里不放任何落脚点，
+    // 黄球悬在沟中偏对岸的半空 —— 只能勾住它、被拽过去、再从球顶跳向对岸
+    // 这颗球自带 range 620：走近了圆圈渐显，进了圈才勾得住
+    hook(x){
+      return {w:1160, runs:[[x, 400], [x + 1040, 120]],
+              blocks:[], orbs:[[x + 820, 440, 22, 620]]};
+    },
+    // 钉刺：两段钉床中间留 116 的落脚，靠连续两次单跳的节奏过去（单跳横距 216）
+    spike(x){
+      return {w:640, runs:[[x, 640]], blocks:[], orbs:[],
+              spikes:[[x + 250, CF - 34, 64, 34], [x + 430, CF - 34, 64, 34]]};
+    },
+    // 弹簧：垫子顶着墙根放，跑过去必踩中（不会被跳过去落在垫子和墙之间的缝里）；
+    // 弹到 352 高，越过 260 高的实心墙顶；就算贴墙起跳也会顺着墙面滑上去落到墙顶
+    spring(x){
+      return {w:760, runs:[[x, 760]], blocks:[[x + 300, CF - 260, 90, 260]], orbs:[],
+              pad:[[x + 236, CF - 30, 64, 30]]};
+    },
+    // 碎裂方块：两块悬空薄板横跨 400 宽的沟，踩上去 .38s 就塌，逼你不停脚
+    // 板与板之间的落差与间距都在单跳范围内（技术好也能直接冲刺+二段跳跨过去）
+    crumble(x){
+      return {w:940, runs:[[x, 420], [x + 820, 120]], blocks:[], orbs:[],
+              crumbles:[[x + 480, CF - 40, 100, 20], [x + 660, CF - 70, 100, 20]]};
+    },
+    // 单向平台：三段阶梯横跨 380 宽的深渊，从下往上穿得过去、从上往下踩得住
+    // 每级抬升 100（单跳顶点 127 够用），也能直接冲刺+二段跳跨过去
+    oneway(x){
+      return {w:960, runs:[[x, 420], [x + 800, 160]], blocks:[], orbs:[],
+              oneways:[[x + 455, CF - 110, 120, 14],
+                       [x + 600, CF - 210, 120, 14],
+                       [x + 745, CF - 110, 120, 14]]};
+    },
+    // 移动平台：500 宽的深渊超过冲刺+二段跳的 478，只能等渡板靠过来再跳上去
+    // 渡板在沟中来回横移（左右各留 30~40 的跳距），黑洞就在身后等着
+    ferry(x){
+      return {w:1040, runs:[[x, 420], [x + 920, 120]], blocks:[], orbs:[],
+              movers:[[x + 460, x + 780, CF - 4, CF + 16]]};
+    }
+  };
+  const SEG_KEYS = ['flat', 'dj', 'dash', 'wall', 'hook', 'spike', 'spring', 'crumble', 'oneway', 'ferry'];
+  let segFirst = [];                                  // 开局前四段：保证四个技能都被用上，之后按池随机
+
+  // 带障碍的路段：钉刺扎人、塌方下沉、单向平台和渡板都要求操作精度
+  const HAZARD_SEGS = ['spike', 'crumble', 'oneway', 'ferry'];
+  function pickSeg(){
+    if(segFirst.length){ const k = segFirst.shift(); lastSeg = k; return k; }
+    // 里程越高障碍越多：危险路段的权重随档位上升，"喘气"的空地则逐档变少。
+    // 用权重抽签（而不是直接改路段本身）是为了保住既有路段"能用这个技能过去"的公平性
+    const t = obTierOf(), pool = [];
+    for(const k of SEG_KEYS){
+      if(k === lastSeg) continue;
+      const w = k === 'flat' ? Math.max(1, 3 - t)
+              : (HAZARD_SEGS.indexOf(k) >= 0 ? 1 + t : 1);
+      for(let i = 0; i < w; i++) pool.push(k);
+    }
+    const k = pool[Math.floor(Math.random() * pool.length)];
+    lastSeg = k;
+    return k;
+  }
+
+  function los(x0, y0, x1, y1){                       // 抓钩视线：沿线上采样，被地形挡住就不能勾
+    for(let i = 1; i < 24; i++){
+      const t = i / 24, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
+      for(const s of rects) if(x > s.x0 && x < s.x1 && y > s.y0 && y < s.y1) return false;
+    }
+    return true;
+  }
+
+  function addOrb(ox, oy, r, range, sx){
+    const R = range > 0 ? range : CHAL.hookRange;       // 每颗球自带射程，没给就用默认射程
+    const g = mk('g', {class:'orb', 'data-sx':sx});
+    // 可视射程圈：先画，压在球体下面；只在主角靠近时渐显，进了圈才勾得住
+    const ring = mk('circle', {cx:ox, cy:oy, r:R, class:'orb-range', opacity:0});
+    g.appendChild(ring);
+    g.appendChild(mk('circle', {cx:ox, cy:oy, r:r + 16, class:'orb-halo'}));
+    const sp = mk('g', {class:'orb-spin'});
+    sp.appendChild(mk('circle', {cx:ox, cy:oy, r:r + 9, class:'orb-dash'}));
+    g.appendChild(sp);
+    g.appendChild(mk('circle', {cx:ox, cy:oy, r:r, class:'orb-core'}));
+    g.appendChild(mk('circle', {cx:ox, cy:oy, r:r, class:'orb-ring'}));
+    g.appendChild(mk('circle', {cx:ox, cy:oy, r:r * .32, class:'orb-dot'}));
+    gOrbs.appendChild(g);
+    chal.orbs.push({x:ox, y:oy, r:r, range:R, rangeEl:ring, op:'0', el:g, sx:sx});
+  }
+
+  // ---------- 新地形（参考《蔚蓝》） ----------
+  const MOVER_W = 110;                                // 移动平台宽度
+
+  // 钉刺：暗红铁座上一排细长毒针，针尖顶到判定框上沿（所见即所碰），碰到即死
+  function addSpike(bx, by, bw, bh, sx){
+    const g = mk('g', {class:'spike', 'data-sx':sx, transform:'translate(' + bx + ' ' + by + ')'});
+    g.appendChild(mk('rect', {x:0, y:0, width:bw, height:bh, class:'spike-glow'}));   // 先垫一层红光
+    const baseY = bh * .8;                                          // 钉座顶面（只剩两成是座，其余全是针）
+    g.appendChild(mk('rect', {x:0, y:baseY, width:bw, height:bh - baseY, class:'spike-base'}));
+    const n = Math.max(2, Math.round(bw / 14)), teeth = bw / n;     // 齿距比原来窄，针更密
+    const w = Math.min(teeth * .26, 4.6);                           // 针腰半宽：细长才叫"尖"
+    let d = '', dShine = '';
+    for(let i = 0; i < n; i++){
+      const cx = (i + .5) * teeth;
+      d += 'M' + (cx - w).toFixed(1) + ' ' + baseY.toFixed(1) +
+           ' L' + cx.toFixed(1) + ' 0' +                            // 针尖顶到判定框上沿
+           ' L' + (cx + w).toFixed(1) + ' ' + baseY.toFixed(1) + ' Z ';
+      dShine += 'M' + (cx - w).toFixed(1) + ' ' + baseY.toFixed(1) + ' L' + cx.toFixed(1) + ' 0 ';
+    }
+    g.appendChild(mk('path', {d:d, class:'spike-tip'}));
+    g.appendChild(mk('path', {d:dShine, class:'spike-shine'}));     // 针体左侧的受光反光边
+    gTerrain.appendChild(g);
+    chal.hazards.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx});
+  }
+
+  // 弹簧垫：不进 rects（不挡路），踩上去且不在上升中就被弹起
+  function addPad(bx, by, bw, bh, sx){
+    const g = mk('g', {class:'spring', 'data-sx':sx, transform:'translate(' + bx + ' ' + by + ')'});
+    g.appendChild(mk('rect', {x:0, y:bh - 6, width:bw, height:6, class:'spring-base'}));
+    let d = '';
+    for(let i = 1; i <= 3; i++){
+      const y = (bh - 5 - i * ((bh - 11) / 3)).toFixed(1);
+      d += 'M' + (bw * .18).toFixed(1) + ' ' + y + ' L' + (bw * .82).toFixed(1) + ' ' + y + ' ';
+    }
+    g.appendChild(mk('path', {d:d, class:'spring-coil'}));
+    g.appendChild(mk('line', {x1:0, y1:2, x2:bw, y2:2, class:'spring-plate'}));
+    gTerrain.appendChild(g);
+    chal.pads.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx});
+  }
+
+  // 碎裂方块：悬空薄板，踩上去 crumbHold 秒后就塌（塌了立刻从碰撞里摘掉）
+  function addCrumb(bx, by, bw, bh, sx){
+    const g = mk('g', {class:'crumble', 'data-sx':sx, transform:'translate(' + bx + ' ' + by + ')'});
+    g.appendChild(mk('rect', {x:0, y:0, width:bw, height:bh, class:'slab-f'}));
+    g.appendChild(mk('line', {x1:0, y1:1, x2:bw, y2:1, class:'edge'}));
+    g.appendChild(mk('path', {class:'edge', d:'M' + (bw * .3).toFixed(1) + ' 0 L' + (bw * .44).toFixed(1) + ' ' + bh +
+      ' M' + (bw * .7).toFixed(1) + ' 0 L' + (bw * .56).toFixed(1) + ' ' + bh}));
+    gTerrain.appendChild(g);
+    const block = {x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx};
+    rects.push(block);
+    chal.crumbs.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx,
+                      el:g, block:block, t:0, gone:false});
+  }
+
+  // 单向平台：从下往上穿得过去（只在 moveY 里、且下落时才拦），下方虚线是"能穿"的提示
+  function addOneWay(bx, by, bw, bh, sx){
+    const g = mk('g', {class:'oneway', 'data-sx':sx, transform:'translate(' + bx + ' ' + by + ')'});
+    g.appendChild(mk('rect', {x:0, y:0, width:bw, height:bh, class:'oneway-bar'}));
+    g.appendChild(mk('line', {x1:0, y1:1, x2:bw, y2:1, class:'edge'}));
+    g.appendChild(mk('line', {x1:0, y1:bh + 7, x2:bw, y2:bh + 7, class:'oneway-hint'}));
+    gTerrain.appendChild(g);
+    rects.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx, oneWay:true});
+  }
+
+  // 移动平台：横移的渡板，每帧由 updateMovers 推进；站在上面的主角被一起带走
+  function addMover(x0, x1, top, bot, sx){
+    const h = bot - top;
+    const g = mk('g', {class:'mover', 'data-sx':sx});
+    g.appendChild(mk('rect', {x:0, y:0, width:MOVER_W, height:h, class:'slab-f'}));
+    g.appendChild(mk('line', {x1:0, y1:1, x2:MOVER_W, y2:1, class:'edge'}));
+    g.appendChild(mk('line', {x1:2, y1:h + 9, x2:MOVER_W - 2, y2:h + 9, class:'mover-mark'}));
+    gTerrain.appendChild(g);
+    const r = {x0:x0, y0:top, x1:x0 + MOVER_W, y1:bot, sx:sx};
+    rects.push(r);
+    chal.movers.push({r:r, el:g, x0:x0, x1:x1, top:top, w:MOVER_W, p:0, dir:1, sx:sx});
+  }
+
+  // 追加一段地形：先铺缺口里的深渊，再铺地板，保证地板压在深渊之上、接缝处不留缝
+  // 每个元素都带上 data-sx（所属路段起点），回收时按它整段摘除
+  function appendSeg(key, x){
+    const seg = SEGS[key](x);
+    for(let i = 0; i < seg.runs.length - 1; i++){
+      const gx0 = seg.runs[i][0] + seg.runs[i][1], gx1 = seg.runs[i + 1][0];
+      if(gx1 <= gx0) continue;
+      gTerrain.appendChild(mk('rect', {x:gx0 - 6, y:CF - 22, width:gx1 - gx0 + 12,
+        height:WORLD_H - CF + 22, class:'abyss', 'data-sx':x}));
+      // 沟壁描边：挑战模式的地面全在同一高度，两壁直接从地面线拉到沟底
+      gTerrain.appendChild(mk('line', {x1:gx0, y1:CF, x2:gx0, y2:WORLD_H - 8, class:'edge-dim', 'data-sx':x}));
+      gTerrain.appendChild(mk('line', {x1:gx1, y1:CF, x2:gx1, y2:WORLD_H - 8, class:'edge-dim', 'data-sx':x}));
+    }
+    seg.runs.forEach(([rx, rw]) => {
+      gTerrain.appendChild(mk('rect', {x:rx, y:CF, width:rw, height:WORLD_H - CF, class:'slab-g', 'data-sx':x}));
+      gTerrain.appendChild(mk('line', {x1:rx, y1:CF + 1, x2:rx + rw, y2:CF + 1, class:'edge', 'data-sx':x}));
+      rects.push({x0:rx, y0:CF, x1:rx + rw, y1:WORLD_H, sx:x});
+    });
+    (seg.blocks || []).forEach(([bx, by, bw, bh]) => {
+      gTerrain.appendChild(mk('rect', {x:bx, y:by, width:bw, height:bh, class:'slab-f', 'data-sx':x}));
+      gTerrain.appendChild(mk('line', {x1:bx, y1:by + 1, x2:bx + bw, y2:by + 1, class:'edge', 'data-sx':x}));
+      if(by + bh - 1 > by) gTerrain.appendChild(mk('line', {x1:bx, y1:by + bh - 1,
+        x2:bx + bw, y2:by + bh - 1, class:'edge-dim', 'data-sx':x}));
+      rects.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:x});
+    });
+    (seg.oneways  || []).forEach(a => addOneWay(a[0], a[1], a[2], a[3], x));
+    (seg.crumbles|| []).forEach(a => addCrumb(a[0], a[1], a[2], a[3], x));
+    (seg.pad     || []).forEach(a => addPad(a[0], a[1], a[2], a[3], x));
+    (seg.spikes  || []).forEach(a => addSpike(a[0], a[1], a[2], a[3], x));
+    (seg.movers  || []).forEach(a => addMover(a[0], a[1], a[2], a[3], x));
+    (seg.orbs    || []).forEach(([ox, oy, orr, orange]) => addOrb(ox, oy, orr, orange, x));
+    spawnPicks(seg, x);                                // 拾取球：撒在这段最宽的一条畅行地板上
+    chalSegs.push({x, w:seg.w});
+    chalGenX = x + seg.w;
+  }
+
+  // 前沿始终领先主角两屏，跑多远生成多远；回收完全落在黑洞身后的路段，避免无尽可能把 DOM 撑爆
+  function ensureSegs(){
+    const need = hero.x + Math.max(1700, viewW() * 2);
+    while(chalGenX < need) appendSeg(pickSeg(), chalGenX);
+    while(chalSegs.length > 6 && chalSegs[0].x + chalSegs[0].w < chal.holeX - 200){
+      const s = chalSegs.shift();
+      rects = rects.filter(r => r.sx !== s.x);
+      chal.orbs    = chal.orbs.filter(o => o.sx !== s.x);
+      chal.picks   = chal.picks.filter(p => p.sx !== s.x);
+      chal.hazards = chal.hazards.filter(h => h.sx !== s.x);
+      chal.pads    = chal.pads.filter(p => p.sx !== s.x);
+      chal.crumbs  = chal.crumbs.filter(cr => cr.sx !== s.x);
+      chal.movers  = chal.movers.filter(m => m.sx !== s.x);
+      for(const n of [...gTerrain.children]) if(+n.getAttribute('data-sx') === s.x) n.remove();
+      for(const n of [...gOrbs.children]) if(+n.getAttribute('data-sx') === s.x) n.remove();
+      for(const n of [...gPick.children]) if(+n.getAttribute('data-sx') === s.x) n.remove();
+    }
+  }
+
+  function syncWorldWidth(){
+    const want = Math.max(chalGenX + 600, Math.ceil(viewW()) + 900);
+    if(want === chalWorldW) return;
+    chalWorldW = want;
+    WORLD_W = want;
+    worldInner.style.width = want + 'px';
+    worldSvg.setAttribute('viewBox', '0 0 ' + want + ' ' + WORLD_H);
+  }
+
+  // ---------- 技能与记分 ----------
+  const distOf = () => Math.max(0, Math.floor((chal.maxX - chal.startX) / CHAL.distDiv));
+  // 总分 = 距离分 + 技能分 + 拾取分 + 金球窗口里的额外半倍（chal.goldPts）
+  const scoreOf = () => Math.floor(distOf() + chal.skillPts + chal.pickPts + chal.goldPts);
+
+  // ---------- 距离驱动的难度爬升 ----------
+  // distOf() 的单位就是"米"（10 个世界单位 = 1 米），所以这两个式子读起来和规则一一对应：
+  //   速度倍率：每 500 米 +0.2 倍（500 米 = ×1.2，1000 米 = ×1.4，以此类推）
+  //   障碍档位：500 米先提一档，之后每 1000 米再提一档
+  const rampOf = () => 1 + CHAL.rampMul * Math.floor(distOf() / CHAL.rampStep);
+  const obTierOf = () => Math.floor(distOf() / CHAL.obStep) + (distOf() >= CHAL.obFrom ? 1 : 0);
+  // 主角与黑洞共用同一个倍率：等比例提速，所以追逐关系不变，只是整局节奏越跑越快
+  const spd = v => v * rampOf();
+
+  // 所有加分都走这一个入口：金球窗口里（goldT > 0）额外再补 0.5 倍，攒在 goldPts 上。
+  // into 决定这笔分归到哪一栏 —— 技能分是"技术动作"，拾取分是"路上捡的"，
+  // 分开记才能让 HUD 上的「技能」「拾取」两个读数各自有意义
+  function awardPts(pts, into){
+    const c = chal;
+    if(into === 'pick') c.pickPts += pts; else c.skillPts += pts;
+    if(c.goldT > 0) c.goldPts += pts * CHAL.goldMul;
+  }
+  const award = kind => awardPts(CHAL.skillPts[kind], 'skill');
+
+  function wallSide(){                                 // 左右哪边紧贴着一块地形（用于蹬墙与滑墙）
+    for(const s of rects){
+      if(hero.y + HERO_H <= s.y0 + 2 || hero.y >= s.y1 - 2) continue;
+      if(Math.abs(hero.x + HERO_W - s.x0) < 3) return 1;
+      if(Math.abs(hero.x - s.x1) < 3) return -1;
+    }
+    return 0;
+  }
+
+  function fireHook(){                                 // 鼠标左键：勾住射程内最近的、没被挡住的黄球
+    const c = chal;
+    if(!chalOn || c.over || c.frozen || c.hook) return;
+    const hx = hero.x + HERO_W / 2, hy = hero.y + HERO_H / 2;
+    let best = null, bd = Infinity;                    // 射程是每颗球自己的 range：进了可视圆圈才勾得住
+    for(const o of c.orbs){
+      const d = Math.hypot(o.x - hx, o.y - hy);
+      if(d <= o.range && d < bd && los(hx, hy, o.x, o.y)){ bd = d; best = o; }
+    }
+    if(!best) return;
+    c.hook = {orb:best};
+    award('hook');
+  }
+
+  // 黄球被引爆：从数据与画面里一并摘掉（它自带的射程圈跟着整组一起没）
+  function removeOrb(o){
+    const i = chal.orbs.indexOf(o);
+    if(i >= 0) chal.orbs.splice(i, 1);
+    o.el.remove();
+  }
+
+  // ---------- 拾取球（白球 / 金球）与短命火花 ----------
+  function addPick(px, py, gold, sx){
+    const R = CHAL.pickR;
+    const g = mk('g', {class:'pick' + (gold ? ' g' : ''), 'data-sx':sx});
+    g.appendChild(mk('circle', {cx:px, cy:py, r:R + 15, class:'pick-halo'}));
+    const sp = mk('g', {class:'pick-spin'});            // 缓转的刻度圈：一眼看出"这是能捡的东西"
+    sp.appendChild(mk('circle', {cx:px, cy:py, r:R + 5, class:'pick-tick'}));
+    g.appendChild(sp);
+    const bob = mk('g', {class:'pick-bob'});            // 浮动挂在子节点上（分组身上已有 svg transform）
+    bob.setAttribute('style', 'animation-delay:-' + ((px % 7) * .34).toFixed(2) + 's');
+    bob.appendChild(mk('circle', {cx:px, cy:py, r:R, class:'pick-ring'}));
+    bob.appendChild(mk('circle', {cx:px, cy:py, r:R * .52, class:'pick-core'}));
+    g.appendChild(bob);
+    gPick.appendChild(g);
+    chal.picks.push({x:px, y:py, r:R + 4, gold, el:g, sx:sx});
+  }
+
+  // 段内"腰高畅行"的自由区间：把实心块、钉刺、碎裂方块、渡板的行程从地板上扣掉。
+  // 撒球必须避开这些东西，否则球会落进墙里（看着像穿模）或把玩家引到危险物上
+  function freeSpans(seg){
+    const cuts = [];
+    const cut = arr => (arr || []).forEach(o => cuts.push([+o[0], +o[0] + +o[2]]));
+    cut(seg.blocks); cut(seg.spikes); cut(seg.crumbles);
+    (seg.movers || []).forEach(m => cuts.push([+m[0], +m[1] + MOVER_W]));
+    const out = [];
+    for(const run of (seg.runs || [])){
+      let a = run[0], b = run[0] + run[1];
+      const hit = cuts.filter(c => c[1] > a && c[0] < b).sort((p, q) => p[0] - q[0]);
+      for(const c of hit){
+        if(c[0] > a) out.push([a, Math.min(c[0], b) - a]);
+        a = Math.max(a, c[1]);
+      }
+      if(b > a) out.push([a, b - a]);
+    }
+    return out;
+  }
+
+  // 撒一排球：落在这段最宽的那条畅行地板上，略高于地面（跑过去顺手吃到）。
+  // 带钉刺或碎裂方块的路段整段不撒 —— 免得"顺着球跑"变成"顺着危险物跑"
+  function spawnPicks(seg, x){
+    if((seg.spikes || []).length || (seg.crumbles || []).length) return;
+    if(Math.random() > CHAL.pickOdds) return;
+    const need = (CHAL.pickN - 1) * CHAL.pickGap + 116;   // 两端各留 58 的余量，不贴着沟沿或墙角
+    let best = null;
+    for(const sp of freeSpans(seg))
+      if(sp[1] >= need && (!best || sp[1] > best[1])) best = sp;
+    if(!best) return;
+    const w = (CHAL.pickN - 1) * CHAL.pickGap;
+    const x0 = best[0] + (best[1] - w) / 2;
+    for(let i = 0; i < CHAL.pickN; i++)
+      addPick(x0 + i * CHAL.pickGap, CF - CHAL.pickUp, Math.random() < CHAL.pickGoldOdds, x);
+  }
+
+  function collectPick(p){
+    const c = chal;
+    const i = c.picks.indexOf(p);
+    if(i < 0) return;
+    c.picks.splice(i, 1);
+    p.el.remove();
+    awardPts(p.gold ? CHAL.pickGold : CHAL.pickWhite, 'pick');
+    if(p.gold){ c.goldT = CHAL.goldWin; c.goldGot++; } else c.whiteGot++;
+    spark(p.x, p.y, p.gold);
+  }
+
+  function starPath(x, y, r, w){                        // 四角星（菱形）：拾取闪光用
+    return 'M' + x + ' ' + (y - r) + ' L' + (x + w) + ' ' + y + ' L' + x + ' ' + (y + r) +
+           ' L' + (x - w) + ' ' + y + ' Z';
+  }
+
+  // 拾取火花：一圈扩散环 + 一枚旋转放大的四角星。走 CSS 动画，演完由 stepTmp 回收
+  function spark(x, y, gold){
+    const tag = gold ? ' g' : '';
+    const g = mk('g', {class:'spark'});
+    g.appendChild(mk('circle', {cx:x, cy:y, r:CHAL.pickR + 5, class:'spark-ring' + tag}));
+    g.appendChild(mk('path', {d:starPath(x, y, CHAL.pickR * 1.6, CHAL.pickR * .46),
+                              class:'spark-star' + tag}));
+    gSpark.appendChild(g);
+    chal.tmp.push({el:g, life:.62});
+  }
+
+  // DASH 冲刺特效：起步瞬间一次摆好，全程不用逐帧接管 ——
+  // 残影的位置是按冲刺速度预先算出来的（760 单位/秒），各自延迟到主角跑过那里才显形；
+  // 速度线从主角背后甩出并淡掉
+  function dashFx(dir){
+    const g = mk('g', {class:'dash-fx'});
+    [.05, .12, .19].forEach((t, i) => {
+      const gh = mk('g', {transform:'translate(' + (hero.x + dir * CHAL.dashVx * t).toFixed(1) +
+                                     ' ' + hero.y.toFixed(1) + ')'});
+      const b = mk('rect', {x:0, y:22, width:HERO_W, height:30, rx:3, class:'ghost-body'});
+      b.setAttribute('style', 'animation-delay:' + (i * .045).toFixed(3) + 's');
+      gh.appendChild(b);
+      g.appendChild(gh);
+    });
+    for(let i = 0; i < 4; i++){
+      const y = hero.y + 26 + i * 8;
+      const len = i % 2 ? 34 : 52;
+      const x1 = dir > 0 ? hero.x - 2 : hero.x + HERO_W + 2;
+      const x2 = x1 - dir * len;
+      const ln = mk('line', {x1:x1, y1:y, x2:x2, y2:y,
+                             class:'dash-streak' + (dir > 0 ? '' : ' l')});
+      ln.setAttribute('style', 'animation-delay:' + (i * .018).toFixed(3) + 's');
+      g.appendChild(ln);
+    }
+    gSpark.appendChild(g);
+    chal.tmp.push({el:g, life:.8});
+  }
+
+  function stepTmp(dt){                                 // 短命火花到期回收（和粒子层互不干扰）
+    const c = chal;
+    if(!c.tmp.length) return;
+    for(const t of c.tmp){
+      t.life -= dt;
+      if(t.life <= 0) t.el.remove();
+    }
+    c.tmp = c.tmp.filter(t => t.life > 0);
+  }
+
+  // 拾取 + 金球窗口：每帧检查主角有没有碰到球；窗口计时；窗口开着时按里程补记 0.5 倍距离分
+  function stepPicks(dt){
+    const c = chal;
+    for(let i = c.picks.length - 1; i >= 0; i--){
+      const p = c.picks[i];
+      const nx = clamp(p.x, hero.x, hero.x + HERO_W), ny = clamp(p.y, hero.y, hero.y + HERO_H);
+      if(Math.hypot(nx - p.x, ny - p.y) < p.r) collectPick(p);
+    }
+    if(c.goldT > 0) c.goldT = Math.max(0, c.goldT - dt);
+    const d = distOf();
+    if(d > c.distPt){
+      if(c.goldT > 0) c.goldPts += (d - c.distPt) * CHAL.goldMul;
+      c.distPt = d;
+    }
+  }
+
+  function doDash(){
+    const c = chal;
+    if(!chalOn || c.over || c.frozen || c.hook || c.dashCd > 0) return;
+    const dir = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
+    // 冲刺刻意不乘提速倍率：它是个"固定距离"技能（760 × 0.26 ≈ 198 单位），路段宽度就是照着
+    // 这个距离设计的。若跟着乘，高里程时一次冲刺会冲出 790 单位，直接把主角甩过落脚平台掉进深渊，
+    // 而冲刺中途无法松手截断 —— 那就成了必死陷阱。保持原样，它至少永远是个安全的选项
+    const go = dir || (hero.face === 'right' ? 1 : -1);
+    hero.vx = go * CHAL.dashVx;
+    if(dir) hero.face = dir > 0 ? 'right' : 'left';
+    c.dashT = CHAL.dashT; c.dashCd = CHAL.dashCd;
+    dashFx(go);                                        // 残影 + 速度线
+    award('dash');
+  }
+
+  // ---------- 黑洞 ----------
+  function darkCheck(){
+    // 视界变大了，危险暗角要提前一点亮起，而不是等圆弧贴到脸上（阈值跟着光晕外缘走）
+    dangerEl.classList.toggle('on', chal.holeX > hero.x - CHAL.holeR * 1.7);
+  }
+
+  function advanceHole(dt){
+    const c = chal;
+    c.holeX += spd(CHAL.holeV) * dt;                                   // 恒定速度＋随里程的爬升倍率，两者等比例提速
+    const px = hero.x + HERO_W / 2;
+    if(px - c.holeX > CHAL.holeLeash) c.holeX = px - CHAL.holeLeash;   // 落后太多就被拽上来
+    darkCheck();
+    // 视界是个圆，所以用"主角矩形到圆心的最近点"判吞噬：贴着圆弧碰到才算死。
+    // 这样判定与画面完全一致 —— 低处圆弧窄、跳高时圆弧宽，不会被凭空吞掉
+    const nx = clamp(c.holeX, hero.x, hero.x + HERO_W);
+    const ny = clamp(CHAL.holeCy, hero.y, hero.y + HERO_H);
+    if(Math.hypot(nx - c.holeX, ny - CHAL.holeCy) < CHAL.holeR){ endChallenge('hole'); return; }
+    if(hero.y > WORLD_H + 80) endChallenge('void');                    // 掉进沟底
+  }
+
+  // ---------- 新地形每帧推进 ----------
+  // 移动平台：在左右两端之间匀速往返；站在板上的主角跟着一起走，免得被落下
+  function updateMovers(dt){
+    const c = chal;
+    for(const m of c.movers){
+      m.p += m.dir * (spd(CHAL.moverV) / Math.max(1, m.x1 - m.x0)) * dt;
+      if(m.p >= 1){ m.p = 1; m.dir = -1; }
+      else if(m.p <= 0){ m.p = 0; m.dir = 1; }
+      const nx = m.x0 + (m.x1 - m.x0) * m.p;
+      const dx = nx - m.r.x0;
+      if(!dx) continue;
+      m.r.x0 = nx; m.r.x1 = nx + m.w;
+      m.el.setAttribute('transform', 'translate(' + nx.toFixed(2) + ' ' + m.top + ')');
+      const feet = hero.y + HERO_H + EPS;
+      if(hero.onGround && Math.abs(feet - m.top) < 2 &&
+         hero.x + HERO_W > m.r.x0 && hero.x < m.r.x1) moveX(dx);
+    }
+  }
+
+  // 碎裂方块：站上去 crumbHold 秒就塌，塌的瞬间从碰撞里摘掉，只留一段坠落淡出的动画
+  function updateCrumbs(dt){
+    const c = chal;
+    for(const cr of c.crumbs){
+      if(cr.gone) continue;
+      if(hero.onGround && Math.abs(hero.y + HERO_H + EPS - cr.y0) < 2 &&
+         hero.x + HERO_W > cr.x0 && hero.x < cr.x1){
+        cr.t += dt;
+        if(cr.t >= CHAL.crumbHold){
+          cr.gone = true;
+          rects = rects.filter(r => r !== cr.block);
+          cr.el.classList.add('fall');
+        }
+      }
+    }
+  }
+
+  // 倒数：只在挑战模式用。数字按 ceil 取，所以 3.0→2.0 显示 3、2.0→1.0 显示 2、1.0→0 显示 1
+  function drawCountdown(){
+    const on = chalOn && countdown > 0;
+    cdownEl.classList.toggle('on', on);
+    if(!on){ cdownShown = 0; return; }
+    const n = Math.ceil(countdown);
+    if(n === cdownShown) return;
+    cdownShown = n;
+    cdownN.textContent = n;
+    cdownN.classList.remove('pop');
+    void cdownN.offsetWidth;        // 强制回流，让每个数字都能重播一次弹入动画
+    cdownN.classList.add('pop');
+  }
+
+  // ---------- 火球（跑到 CHAL.fireStart 米之后才开火） ----------
+  // 从画面右侧成排飞向左边，高度贴近地面 —— 站着不动必被打中，只能跳过去。碰到即死
+  function spawnFire(x, y){
+    const g = mk('g', {class:'fire', transform:'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')'});
+    g.appendChild(mk('circle', {cx:0, cy:0, r:30, class:'fire-glow'}));         // 外圈热辐射
+    g.appendChild(mk('line', {x1:9, y1:0, x2:36, y2:0, class:'fire-tail'}));    // 向右拖出的火尾
+    g.appendChild(mk('circle', {cx:0, cy:0, r:CHAL.fireR, class:'fire-shell'}));
+    g.appendChild(mk('circle', {cx:0, cy:0, r:CHAL.fireR * .5, class:'fire-core'}));
+    gFire.appendChild(g);
+    chal.fire.push({x:x, y0:y, y:y, r:CHAL.fireR, vx:-CHAL.fireV,
+                    ph:Math.random() * 6.3, el:g, key:''});
+  }
+
+  function updateFire(dt){
+    const c = chal;
+    if(distOf() >= CHAL.fireStart){                     // 只跑够里程才开火，之前安安静静
+      c.fireT -= dt;
+      if(c.fireT <= 0){
+        c.fireT = CHAL.fireGap * (.7 + Math.random() * .8);          // 随机间隔，免得节奏可被背下来
+        const n = CHAL.fireN + Math.min(2, Math.floor(obTierOf() / 3));   // 档位越高，一小排里的火球越多（上限也压低，别堆成火墙）
+        const right = camX + viewW() + 70;
+        for(let i = 0; i < n; i++)
+          spawnFire(right + i * CHAL.fireGapX, CHAL.fireY + Math.random() * CHAL.fireYJit);
+      }
+    }
+    for(const f of c.fire){
+      f.x += f.vx * dt;
+      f.y = f.y0 + Math.sin(c.t * 5 + f.ph) * CHAL.fireBob;          // 轻微上下浮动，像被热浪托着
+      const key = f.x.toFixed(1) + '|' + f.y.toFixed(1);
+      if(key !== f.key){
+        f.key = key;
+        f.el.setAttribute('transform', 'translate(' + f.x.toFixed(1) + ' ' + f.y.toFixed(1) + ')');
+      }
+      // 和黑洞同一套判定：主角矩形到火球圆心的最近点
+      const nx = clamp(f.x, hero.x, hero.x + HERO_W), ny = clamp(f.y, hero.y, hero.y + HERO_H);
+      if(Math.hypot(nx - f.x, ny - f.y) < f.r){ endChallenge('fire'); return; }
+    }
+    // 飞出画面左侧就回收，别让 DOM 无限长下去
+    c.fire = c.fire.filter(f => { if(f.x < camX - 200){ f.el.remove(); return false; } return true; });
+  }
+
+  // ---------- 一局的推进 ----------
+  function stepChallenge(dt){
+    const c = chal;
+    if(c.over) return;
+    c.t += dt;
+    if(c.dashT > 0) c.dashT = Math.max(0, c.dashT - dt);
+    if(c.dashCd > 0) c.dashCd = Math.max(0, c.dashCd - dt);
+    stepPicks(dt);                               // 拾取球 + 金球窗口计时（放在冻结/钩爪之前，
+                                                 // 钩爪路上擦到的球也算捡到、窗口计时也不会被卡住）
+    stepTmp(dt);                                 // 回收到期的拾取火花与冲刺残影
+
+    updateMovers(dt);                            // 渡板先走一步，站在上面的主角被一起带走
+    updateCrumbs(dt);
+
+    const dir = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
+
+    if(c.frozen){               // 站在黄球上：完全静止，按方向键或跳键才解开
+      // 判定放宽：抓钩拽人的整段路上、以及落位前一瞬按过的跳键都算数 —— 那些按键记在跳跃缓冲里
+      // （钩子/冻结这两段提前 return，缓冲不衰减），所以一落上球顶就直接引爆，
+      // 不用卡在"踩稳的那一瞬间"再补按一次
+      const held = keys[' '] || keys['arrowup'] || keys['w'];
+      const buffered = hero.buffer > 0;
+      if(dir || held || buffered){
+        const jump = held || buffered;
+        const orb = c.frozenOrb;
+        c.frozen = false; c.frozenOrb = null; c.hook = null;
+        hero.onGround = false;
+        hero.vx = dir * 140;
+        // 按跳 = 引爆脚下这颗黄球：一次远超普通跳的暴冲 + 黄色粒子爆散，球随之消失；
+        // 只按方向键则是正常走下球，球还留在原地，以后还能再勾
+        hero.vy = jump ? CHAL.orbBurstVy : 0;
+        if(jump && orb){
+          burstFx(orb.x, orb.y, 'orb');
+          removeOrb(orb);
+          awardPts(CHAL.orbBurstPts, 'skill');       // 引爆黄球额外 +200（窗口里再吃半倍）
+        }
+        hero.coyote = 0; hero.buffer = 0; hero.djAvail = true;
+        if(dir) hero.face = dir > 0 ? 'right' : 'left';
+      }else{
+        advanceHole(dt);
+        return;
+      }
+    }
+
+    if(c.hook){                 // 抓钩拽人：方向由钩子决定，重力与水平输入都不生效
+      const o = c.hook.orb;
+      const hx = hero.x + HERO_W / 2, hy = hero.y + HERO_H / 2;
+      const dx = o.x - hx, dy = o.y - hy, d = Math.hypot(dx, dy) || 1;
+      const restX = o.x - HERO_W / 2, restY = o.y - o.r - HERO_H;
+      // 收到"站上球顶"的距离就落位，不再外拽：判定阈值比落位距多 2 单位
+      if(d <= o.r + HERO_H / 2 + 2){
+        c.frozen = true; c.frozenOrb = o; c.hook = null;      // 记住落在哪颗球上，按空格才能引爆它
+        hero.x = restX; hero.y = restY;
+        hero.vx = 0; hero.vy = 0; hero.onGround = false;
+        c.ropeKey = ''; drawRope();                          // 钩子已脱手，把缆绳从画面上收掉
+      }else{
+        hero.vx = dx / d * spd(CHAL.hookPull);
+        hero.vy = dy / d * spd(CHAL.hookPull);
+        moveX(hero.vx * dt); moveY(hero.vy * dt);
+      }
+      const rope = 'translate(' + hero.x.toFixed(2) + ' ' + hero.y.toFixed(2) + ')|' + o.x + '|' + o.y;
+      if(rope !== c.ropeKey){ c.ropeKey = rope; drawRope(); }
+      advanceHole(dt);
+      return;
+    }
+
+    if(dir) hero.face = dir > 0 ? 'right' : 'left';
+    const dashing = c.dashT > 0;
+    const ws = wallSide();
+    const sliding = !dashing && !hero.onGround && ws !== 0 && dir === ws;
+
+    if(!dashing){               // 冲刺期间不接管速度，让提速吃满整段
+      const r = rampOf(), target = dir * CHAL.maxVx * r;
+      const acc = (hero.onGround ? (dir ? CHAL.accG : CHAL.decG) : (dir ? CHAL.accA : CHAL.decA)) * r;
+      if(hero.vx < target) hero.vx = Math.min(target, hero.vx + acc * dt);
+      else if(hero.vx > target) hero.vx = Math.max(target, hero.vx - acc * dt);
+    }
+
+    // 跳跃：土狼时间 + 输入缓冲；优先级 地面跳 → 蹬墙跳 → 二段跳
+    if(hero.onGround) hero.djAvail = true;
+    hero.coyote = hero.onGround ? CHAL.coyote : Math.max(0, hero.coyote - dt);
+    hero.buffer = Math.max(0, hero.buffer - dt);
+    if(hero.buffer > 0 && hero.coyote > 0){
+      hero.vy = CHAL.jumpV; hero.onGround = false;
+      hero.coyote = 0; hero.buffer = 0; hero.djAvail = true;
+      heroJumps++;
+    }else if(hero.buffer > 0 && ws !== 0 && !hero.onGround){
+      hero.vy = CHAL.wallVy;                       // 蹬墙跳：往离墙的方向弹开再往上蹬
+      hero.vx = -ws * CHAL.wallPush;
+      hero.face = -ws > 0 ? 'right' : 'left';
+      hero.buffer = 0; hero.djAvail = true;
+      award('wall');
+    }else if(hero.buffer > 0 && hero.djAvail && !hero.onGround){
+      hero.vy = CHAL.djVy;
+      hero.buffer = 0; hero.djAvail = false;
+      heroJumps++; award('dj');
+    }
+
+    hero.vy = Math.min(CHAL.maxVy, hero.vy + CHAL.grav * dt);
+    if(sliding) hero.vy = Math.min(hero.vy, CHAL.wallSlide);      // 贴墙只按方向键：缓慢滑落
+
+    moveX(hero.vx * dt);
+    moveY(hero.vy * dt);
+
+    // 弹簧垫：踩到就弹起（不在上升中才触发，免得刚弹起又被弹一次）
+    if(hero.vy >= 0){
+      for(const p of c.pads){
+        if(hero.y + HERO_H > p.y0 && hero.y < p.y1 && hero.x + HERO_W > p.x0 && hero.x < p.x1){
+          hero.vy = CHAL.springVy; hero.onGround = false; hero.djAvail = true;
+          award('spring');
+          break;
+        }
+      }
+    }
+    // 钉刺：碰到即死
+    for(const s of c.hazards){
+      if(hero.y + HERO_H > s.y0 && hero.y < s.y1 && hero.x + HERO_W > s.x0 && hero.x < s.x1){
+        endChallenge('spike'); return;
+      }
+    }
+    updateFire(dt);                               // 火球：移动、命中判定、过期回收（过期回收不能省）
+    if(c.over) return;                            // 被火球打中就停在这一帧，后面的收尾别再跑
+
+    if(hero.onGround) hero.coyote = CHAL.coyote;                  // 落地即补满
+    c.maxX = Math.max(c.maxX, hero.x);
+
+    ensureSegs();
+    stepFx(dt);                                   // 引爆黄球的爆散粒子（与剧情模式共用同一套）
+    advanceHole(dt);
+  }
+
+  // ---------- 渲染 ----------
+  function drawRope(){
+    gRope.textContent = '';
+    const c = chal;
+    if(!c.hook) return;
+    const o = c.hook.orb;
+    gRope.appendChild(mk('line', {x1:hero.x + HERO_W * .62, y1:hero.y + HERO_H * .34,
+      x2:o.x, y2:o.y, class:'rope hot'}));
+    gRope.appendChild(mk('circle', {cx:o.x, cy:o.y, r:6, class:'rope-end'}));
+  }
+
+  // 离线生成一条"被拽弯"的时空环：极坐标采样，半径上叠两段不同频率的晃动。
+  // 路径本身是死的，靠缓转就能一直看起来在变形 —— 不用每帧重建路径
+  function warpRing(cx, cy, r, amp, seed){
+    const n = 72, p = [];
+    for(let i = 0; i < n; i++){
+      const a = i / n * Math.PI * 2;
+      const rr = r + amp * Math.sin(a * 3 + seed) + amp * .42 * Math.sin(a * 5 - seed * 2.1);
+      p.push((cx + Math.cos(a) * rr).toFixed(1) + ' ' + (cy + Math.sin(a) * rr).toFixed(1));
+    }
+    return 'M' + p.join(' L') + ' Z';
+  }
+
+  // 黑洞：一个浑圆的视界 + 周围被扯弯的空间。几何全部离线生成、动效全交给 CSS，
+  // 每帧只更新整组的 x 位移（不跟随主角 y），所以主循环的负担不变
+  function drawHole(){
+    const c = chal;
+    if(!holeEl){
+      // 关闭动效偏好时，时空环与碎屑不缓转（和其余挑战动效的处理一致）
+      holeSpinOn = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const R = CHAL.holeR, CY = CHAL.holeCy;
+      const g = mk('g', {class:'hole'});
+      // 由外向内：冷光晕 → 流动的吸力虚线 → 两条反向缓转的弯曲时空环 → 引力透镜环
+      // → 视界 → 核心 → 螺旋内吸的碎屑 → 边缘亮环（碎屑压在视界之上才看得见）
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R * 1.34, class:'hole-glow'}));
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R * 1.52, class:'hole-pull'}));
+      holeWarpA = mk('path', {d:warpRing(0, CY, R * 1.33, R * .062, 1.3), class:'hole-warp a'});
+      holeWarpB = mk('path', {d:warpRing(0, CY, R * 1.13, R * .034, 2.7), class:'hole-warp b'});
+      g.appendChild(holeWarpA);
+      g.appendChild(holeWarpB);
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R * 1.19, class:'hole-lens2'}));
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R, class:'hole-disc'}));
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R * .45, class:'hole-core'}));
+      const sw = mk('g', {transform:'translate(0 ' + CY + ')'});   // 把旋转中心挪到局部原点，转速才会稳
+      const spin = mk('g', {class:'hole-swirl'});
+      // 三圈碎屑、每圈 7 颗：负延迟让开局就有满场碎屑（和主菜单落雪同一套做法）
+      [[R * 1.05, 7], [R * .72, 7], [R * .42, 7]].forEach((ring, ri) => {
+        const rad = ring[0], n = ring[1];
+        for(let i = 0; i < n; i++){
+          const spoke = mk('g', {transform:'rotate(' + (360 / n * i + ri * 26).toFixed(1) + ')'});
+          spoke.appendChild(mk('circle', {cx:0, cy:(-rad).toFixed(1),
+            r:(1.5 + (i % 3) * .5).toFixed(1), class:'hole-mote',
+            style:'--fall:' + rad.toFixed(1) + 'px;animation-delay:-' +
+              ((ri * .7 + i * .37) % 2.6).toFixed(2) + 's;animation-duration:' +
+              (2.1 + (i + ri) % 3 * .45).toFixed(2) + 's'}));
+          spin.appendChild(spoke);
+        }
+      });
+      sw.appendChild(spin);
+      g.appendChild(sw);
+      holeSwirl = spin;                                   // 每帧由 renderChallenge 写 rotate
+      g.appendChild(mk('circle', {cx:0, cy:CY, r:R * 1.03, class:'hole-lens'}));
+      gHole.appendChild(g);
+      holeEl = g;
+    }
+    holeEl.setAttribute('transform', 'translate(' + c.holeX.toFixed(1) + ' 0)');
+  }
+
+  function renderChallenge(){
+    const c = chal;
+    heroEl.setAttribute('transform', 'translate(' + hero.x.toFixed(2) + ' ' + hero.y.toFixed(2) + ')');
+    syncHeroFace();                                          // 朝向 + 微表情一起同步
+    stage.style.setProperty('--camx', camX.toFixed(2));      // 和故事模式一样，每帧把镜头写进 CSS 变量
+    syncWorldWidth();
+    drawHole();
+    // 时空环与碎屑的缓转：直接写 rotate 属性并明确绕视界圆心，不依赖 CSS transform-origin
+    // 对不规则轮廓的包围盒（那样环会偏心打转）。内环反向 —— 一正一反才像被翻搅
+    if(holeSpinOn){
+      const spin = c.t * CHAL.holeSpin, cy = CHAL.holeCy;
+      holeWarpA.setAttribute('transform', 'rotate(' + spin.toFixed(1) + ' 0 ' + cy + ')');
+      holeWarpB.setAttribute('transform', 'rotate(' + (-spin * .62).toFixed(1) + ' 0 ' + cy + ')');
+      holeSwirl.setAttribute('transform', 'rotate(' + (spin * 2.86).toFixed(1) + ')');
+    }
+
+    // 黄球射程圈：离得越近越清晰；进了圈就是满亮，再往外 0.6 倍射程内渐隐到看不见
+    const hx = hero.x + HERO_W / 2, hy = hero.y + HERO_H / 2;
+    for(const o of c.orbs){
+      const d = Math.hypot(o.x - hx, o.y - hy);
+      const op = clamp(1 - (d - o.range) / (o.range * .6), 0, 1);
+      const s = op > 0 ? op.toFixed(2) : '0';
+      if(o.op !== s){ o.op = s; o.rangeEl.setAttribute('opacity', s); }
+    }
+
+    const goldOn = c.goldT > 0;
+    const key = scoreOf() + '|' + distOf() + '|' + c.skillPts + '|' + c.pickPts + '|' +
+                c.whiteGot + c.goldGot + '|' + (goldOn ? c.goldT.toFixed(1) : '0') + '|' +
+                rampOf().toFixed(1) + '|' + obTierOf();
+    if(key !== c.hudKey){
+      c.hudKey = key;
+      cScore.textContent = scoreOf();
+      cDist.textContent = distOf();
+      cSkill.textContent = c.skillPts;
+      cPick.textContent = c.whiteGot + c.goldGot;
+      cRamp.textContent = '×' + rampOf().toFixed(1);          // 每 500 米 +0.2 倍
+      cTier.textContent = 'Lv.' + (obTierOf() + 1);           // 障碍档位（1 档起）
+    }
+    // 金球窗口：只在开着时出现，整块 HUD 的分数也跟着染金，让"这 10 秒得分更快"一眼可见
+    if(c.goldOn !== goldOn){
+      c.goldOn = goldOn;
+      cGold.classList.toggle('on', goldOn);
+      cScore.classList.toggle('boost', goldOn);
+    }
+    if(goldOn) cGoldT.textContent = c.goldT.toFixed(1);
+    const p = (Math.max(0, Math.min(1, 1 - c.dashCd / CHAL.dashCd)) * 100).toFixed(1) + '%';
+    if(cdFill.style.width !== p) cdFill.style.width = p;
+  }
+
+  // ---------- 进出挑战 ----------
+  function openChallenge(){
+    loadHeld();
+    chalBest.textContent = held.best;
+    chalLast.textContent = held.last;
+    showPanel('challenge');
+  }
+
+  function startChallenge(){
+    hideOverlay();
     fade.classList.remove('quick');
-    fadeMsg.textContent = '章节完成';
-    fadeSub.textContent = '用时 ' + clock(Math.floor(elapsed)) + ' · ESC 返回标题';
+    clearFadePanel();
+    fadeMsg.textContent = '挑战模式';
+    fadeSub.textContent = '载入中';
     fade.classList.add('on');
+    buildChallenge();
+    // 黑幕还盖着的时候世界就开始跑了，等它拉开再交还画面
+    setTimeout(() => {
+      if(chalOn && mode === 'play'){
+        fade.classList.remove('on');
+        fadeMsg.textContent = '';
+        fadeSub.textContent = '';
+      }
+    }, 620);
+  }
+
+  function buildChallenge(){
+    chal = {t:0, orbs:[], picks:[], tmp:[], hazards:[], pads:[], crumbs:[], movers:[],
+            skillPts:0, pickPts:0, goldPts:0, goldT:0, distPt:0, whiteGot:0, goldGot:0,
+            goldOn:false,
+            dashT:0, dashCd:0, hook:null, frozen:false, frozenOrb:null, over:false,
+            dying:false, deathT:0, why:'',
+            fire:[], fireT:CHAL.fireGap,                     // 火球：跑到 CHAL.fireStart 米才开始生成
+            holeX:-420, maxX:0, startX:0, hudKey:'', ropeKey:''};   // 黑洞从画面左外起步
+    chalOn = true;
+    chalSegs = []; lastSeg = ''; chalGenX = 0; chalWorldW = 0; holeEl = null;
+    holeWarpA = holeWarpB = holeSwirl = null;
+    // 开局前四段固定按 二段跳→冲刺→蹬墙→抓钩 的顺序各来一次，保证四个技能都用得上
+    segFirst = ['dj', 'dash', 'wall', 'hook'];
+    for(let i = segFirst.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [segFirst[i], segFirst[j]] = [segFirst[j], segFirst[i]];
+    }
+
+    gTerrain.textContent = ''; gOrbs.textContent = ''; gRope.textContent = '';
+    gProps.textContent = ''; gRubble.textContent = ''; gFx.textContent = '';
+    gPlayer.textContent = ''; gHole.textContent = ''; gFire.textContent = '';
+    gPick.textContent = ''; gSpark.textContent = '';     // 拾取球与短命火花层也要清空
+    rects = []; cpEls = []; goalEl = null; gateEl = null; stoneEl = null;
+
+    // 起始平台：站上去就能开跑，前方立刻是第一段随机地形
+    gTerrain.appendChild(mk('rect', {x:-60, y:CF, width:720, height:WORLD_H - CF, class:'slab-g'}));
+    gTerrain.appendChild(mk('line', {x1:-60, y1:CF + 1, x2:660, y2:CF + 1, class:'edge'}));
+    rects.push({x0:-60, y0:CF, x1:660, y1:WORLD_H});
+    chalGenX = 620;
+
+    SOLIDS = []; CPS = []; SPAWN = {x:110, y:CF - HERO_H}; GOAL = null;
+    ALTAR = null; GATE = null;                       // 挑战模式不走剧情关卡，这几项一律清空
+    WORLD_W = 3000; chalWorldW = 0;
+    worldSvg.setAttribute('viewBox', '0 0 ' + WORLD_W + ' ' + WORLD_H);
+
+    Object.assign(hero, {x:110, y:CF - HERO_H, vx:0, vy:0, onGround:true,
+      coyote:CHAL.coyote, buffer:0, face:'right', spin:0, shake:0, djAvail:true});
+    heroEl = mkHero();
+    gPlayer.appendChild(heroEl);
+    faceSet = ''; moodSet = '~'; fallPeak = 0; heroDeaths = 0; heroJumps = 0;
+    heroEl.removeAttribute('data-mood');     // 新一局从无表情开始
+
+    chal.startX = hero.x; chal.maxX = hero.x;
+    chal.holeX = CHAL.holeStart;             // 黑洞从屏幕外开始追（起点在 CHAL 里统一调）
+    ensureSegs();                            // 先把前方两屏地形铺出来，免得开场踩空
+    chal.dashCd = 0; chal.dashT = 0;
+    countdown = CHAL.countT;                 // 先按 3-2-1 倒数、世界静止，黑幕拉开后才开始动
+
+    camX = clampCam(hero.x + HERO_W / 2 - viewW() * CHAL.frameX);
+    resetZoomVars();                         // 挑战没有过场推近，镜头层写回恒等变换
+    stage.style.setProperty('--s', sc().toFixed(5));
+    stage.style.setProperty('--camx', camX.toFixed(2));
+    document.body.classList.add('playing', 'chal');
+    dangerEl.classList.remove('on');
+    inLevel = true; mode = 'play';
+    startLoop();
+  }
+
+  // 死亡第一步：主角处炸开粒子、隐藏主角，世界就此冻住。主循环继续跑着演这场爆炸，
+  // 演完（deathT 归零）再由 tick 调 showChalSummary 弹出结算窗 —— 不再一死就把黑幕糊上来
+  function endChallenge(why){
+    const c = chal;
+    if(!c || c.over) return;
+    c.over = true;
+    c.why = why;
+    heroEl.style.opacity = '0';                  // 主角化作粒子，原地只留爆点
+    gRope.textContent = '';                      // 钩子线立刻收掉，免得挂在爆点旁
+    dangerEl.classList.remove('on');
+    if(prefReduce){ showChalSummary(); return; } // 无障碍：不做爆炸演出，直接进结算
+    c.dying = true;
+    c.deathT = CHAL.deathDur;
+    // 主角在画面外（掉进沟底）时把爆点夹回可见范围内，免得粒子在屏幕下放空转
+    burstFx(hero.x + HERO_W / 2, Math.min(hero.y + HERO_H / 2, WORLD_H - 40), 'death',
+      {n:CHAL.deathN, spd:120, spdVar:300, ring:CHAL.deathRing, ringLife:.7,
+       life:.62, lifeVar:.62, hold:1.6});
+  }
+
+  // 死亡第二步（爆炸演完后）：清场、算分落盘、弹出结算窗口
+  function showChalSummary(){
+    const c = chal;
+    const why = c.why;
+    chalOn = false;
+    c.dying = false;
+    stopLoop();
+    countdown = 0; cdownEl.classList.remove('on');
+    // 注意：body.playing / body.chal 保留 —— 结算窗是半透明的，冻住的世界正好当它的背景
+    // （HUD 与危险暗角由 body.sum 收掉，见 CSS）
+    // 收尾：抓钩、黄球、拾取球、黑洞、火球的元素一并清掉，回标题或进剧情关卡都不会留下挑战模式的残影
+    gRope.textContent = ''; gOrbs.textContent = ''; gHole.textContent = '';
+    gFire.textContent = ''; c.fire = [];                       // 还在飞的火球也一并收掉
+    gPick.textContent = ''; c.picks = [];
+    gSpark.textContent = ''; c.tmp = [];                       // 还没演完的拾取火花与冲刺残影也收掉
+    gFx.textContent = ''; fxP = []; fxRing = null; fxT = 0; fxTmax = 1.25;   // 爆炸粒子也收掉
+    holeEl = null;
+    holeWarpA = holeWarpB = holeSwirl = null;
+    inLevel = false;
+    mode = 'clear';                          // 和剧情结算同一档：只吃结算面板的按键，不再吃游戏输入
+
+    const score = scoreOf();
+    held.last = score;
+    const isBest = score > held.best;
+    if(isBest) held.best = score;
+    saveHeld();
+
+    sumMsg.textContent = '挑战结束';
+    sumSub.textContent = isBest ? '新纪录'
+      : (why === 'void' ? '坠落' : (why === 'spike' ? '钉刺'
+        : (why === 'fire' ? '火球' : '被吞噬')));
+    setFadeStats([
+      ['本次得分', score],
+      ['跑出距离', distOf() + ' 米']
+    ]);
+    // 结算窗：退出（次）/ 重试（主）。用同一套按钮与快捷键，只是动作换一套
+    fadeKind = 'challenge';
+    fadeBtns[0].textContent = '退出';
+    fadeBtns[1].textContent = '重试';
+    fadeBtns[1].style.display = '';
+    fSel = 1;
+    syncFadeBtns();
+    fadeActsOn = true;
+    fadeFoot.innerHTML = '<span><b>A D</b> 切换</span><span><b>ENTER</b> 确认</span>' +
+      '<span><b>ESC</b> 退出</span>';
+    fadeActs.classList.add('show');
+    fadeFoot.classList.add('show');
+    showSum();
+  }
+
+  function leaveChallenge(){
+    if(chal) chal.over = true;
+    countdown = 0; cdownEl.classList.remove('on');        // 收掉可能还挂在画面上的倒数
+    // 结算面板上退出时 inLevel 已经是 false，leaveLevel 会直接返回，
+    // 所以这里自己把镜头归零，免得标题背景还停在挑战模式的取景上
+    stage.style.setProperty('--camx', '0');
+    stage.style.setProperty('--s', sc().toFixed(5));
+    backToTitle();
   }
 
   // 初始就把世界缩放同步到视口，保证未进入关卡时背景也完整覆盖
@@ -2314,14 +4170,28 @@
 
   // ---------- wiring ----------
   document.getElementById('btnSaveBack').addEventListener('click', backToMenu);
-  document.getElementById('btnSetBack').addEventListener('click', backToMenu);
+  document.getElementById('btnSetBack').addEventListener('click', closePanelBack);
   document.getElementById('btnAboutBack').addEventListener('click', backToMenu);
+  document.getElementById('btnChalBack').addEventListener('click', backToMenu);
+  document.getElementById('btnChalStart').addEventListener('click', startChallenge);
+  // 暂停面板的三枚按钮：鼠标悬停同步选中态，点击与键盘走同一个入口
+  pauseBtns[0].addEventListener('mouseenter', () => { pauseSel = 0; syncPBtns(); });
+  pauseBtns[1].addEventListener('mouseenter', () => { pauseSel = 1; syncPBtns(); });
+  pauseBtns[2].addEventListener('mouseenter', () => { pauseSel = 2; syncPBtns(); });
+  pauseBtns.forEach((b, n) => b.addEventListener('click', () => runPauseBtn(n)));
   cBtns[0].addEventListener('mouseenter', () => { cSel = 0; syncCBtns(); });
   cBtns[1].addEventListener('mouseenter', () => { cSel = 1; syncCBtns(); });
   cBtns[0].addEventListener('click', confirmCancel);
   cBtns[1].addEventListener('click', confirmOkRun);
+  // 关卡结算的两枚按钮：鼠标悬停同步选中态，点击与键盘走同一个入口
+  fadeBtns[0].addEventListener('mouseenter', () => { fSel = 0; syncFadeBtns(); });
+  fadeBtns[1].addEventListener('mouseenter', () => { if(fadeBtns[1].style.display !== 'none'){ fSel = 1; syncFadeBtns(); } });
+  fadeBtns[0].addEventListener('click', () => runFadeBtn(0));
+  fadeBtns[1].addEventListener('click', () => runFadeBtn(1));
   document.getElementById('veil').addEventListener('click', () => {
-    if(mode === 'save' || mode === 'settings' || mode === 'about') backToMenu();
+    if(mode === 'pause') resumeGame();                                  // 点空白处 = 继续游戏
+    else if(mode === 'settings' || mode === 'about') closePanelBack();
+    else if(mode === 'save' || mode === 'challenge') backToMenu();
     else if(mode === 'confirm') confirmCancel();
   });
 
@@ -2338,8 +4208,31 @@
       return;
     }
     if(mode === 'play' || mode === 'clear' || mode === 'ending'){
-      if(k === 'Escape'){ e.preventDefault(); backToTitle(); return; }
-      if(mode !== 'play') return;                    // clear / ending 只接受 ESC
+      if(mode === 'clear'){
+        if(!fadeActsOn){                              // 没有结算按钮的说明屏：只有 ESC（回标题）有含义
+          if(k === 'Escape'){ e.preventDefault(); backToTitle(); }
+          return;
+        }
+        // 结算按钮：A / D（← → 也照样能用）在"退出 / 重试"之间来回切
+        if(k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown' ||
+           k === 'a' || k === 'A' || k === 'd' || k === 'D'){
+          if(fadeBtns[1].style.display !== 'none'){ e.preventDefault(); fSel = 1 - fSel; syncFadeBtns(); }
+          return;
+        }
+        if(k === 'Enter'){ e.preventDefault(); runFadeBtn(fSel); return; }
+        if(k === 'Escape'){ e.preventDefault(); runFadeBtn(0); return; }   // ESC = 次要动作（退出）
+        return;
+      }
+      if(chal && chal.dying) return;                  // 死亡爆炸演出期间不吃任何输入（连 ESC 也不行）
+      if(k === 'Escape'){ e.preventDefault(); openPause(); return; }   // 挑战模式也走暂停面板，从面板里退回主菜单
+      if(mode !== 'play') return;                    // ending 只接受 ESC
+      if(chalOn){                                    // 挑战模式：没有过场，按键直接进物理
+        if(k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === ' ' || k === 'Spacebar') e.preventDefault();
+        keys[k.toLowerCase()] = true;
+        if((k === 'ArrowUp' || k === 'w' || k === 'W' || k === ' ') && !e.repeat) hero.buffer = CHAL.buffer;
+        else if(k === 'Shift' && !e.repeat) doDash();
+        return;
+      }
       if(introPhase === 'wait' || introPhase === 'fall'){ e.preventDefault(); return; }  // 坠落中不接受操作
       if(introPhase === 'stuck'){                    // 卡住中：只统计空格
         if(k === ' ' || k === 'Spacebar'){ e.preventDefault(); if(!e.repeat) stuckPress(); }
@@ -2357,8 +4250,24 @@
       }else if(k === 'r' || k === 'R') respawn();
       return;
     }
+    if(mode === 'pause'){
+      if(k === 'Escape'){ e.preventDefault(); resumeGame(); return; }
+      if(k === 'ArrowUp' || k === 'w' || k === 'W'){
+        e.preventDefault(); pauseSel = (pauseSel + pauseBtns.length - 1) % pauseBtns.length; syncPBtns(); return;
+      }
+      if(k === 'ArrowDown' || k === 's' || k === 'S'){
+        e.preventDefault(); pauseSel = (pauseSel + 1) % pauseBtns.length; syncPBtns(); return;
+      }
+      if(k === 'Enter' || k === ' '){ e.preventDefault(); runPauseBtn(pauseSel); return; }
+      return;
+    }
     if(mode === 'settings' || mode === 'about'){
-      if(k === 'Escape' || k === 'Enter' || k === 'Backspace'){ e.preventDefault(); backToMenu(); }
+      if(k === 'Escape' || k === 'Enter' || k === 'Backspace'){ e.preventDefault(); closePanelBack(); }
+      return;
+    }
+    if(mode === 'challenge'){
+      if(k === 'Escape' || k === 'Backspace'){ e.preventDefault(); backToMenu(); }
+      else if(k === 'Enter'){ e.preventDefault(); startChallenge(); }
       return;
     }
     if(mode === 'save'){
@@ -2371,8 +4280,9 @@
     }
     if(mode === 'confirm'){
       if(k === 'Escape' || k === 'Backspace'){ e.preventDefault(); confirmCancel(); }
-      else if(k === 'ArrowLeft' || k === 'ArrowUp'){ e.preventDefault(); cSel = 0; syncCBtns(); }
-      else if(k === 'ArrowRight' || k === 'ArrowDown'){ e.preventDefault(); cSel = 1; syncCBtns(); }
+      // A / D 与左右键等价：取消在左、确定在右
+      else if(k === 'ArrowLeft' || k === 'ArrowUp' || k === 'a' || k === 'A'){ e.preventDefault(); cSel = 0; syncCBtns(); }
+      else if(k === 'ArrowRight' || k === 'ArrowDown' || k === 'd' || k === 'D'){ e.preventDefault(); cSel = 1; syncCBtns(); }
       else if(k === 'Enter'){ e.preventDefault(); (cSel ? confirmOkRun : confirmCancel)(); }
     }
   });
@@ -2383,8 +4293,16 @@
     keys[kk] = false;
     if(cutLock > 0) return;                          // 挣脱上冲期间不截断速度
     if(learn) return;                                // 习得二段跳的过场期间不截断速度
-    if((kk === 'arrowup' || kk === 'w' || kk === ' ') && inLevel && hero.vy < PHYS.cutV) hero.vy = PHYS.cutV;
+    if((kk === 'arrowup' || kk === 'w' || kk === ' ') && inLevel && hero.vy < cutV())
+      hero.vy = cutV();
   });
+  // 松手截断上升速度时用的阈值：挑战模式的跳跃更高，用自己的那一档
+  const cutV = () => chalOn ? CHAL.cutV : PHYS.cutV;
+  // 鼠标左键：抓钩
+  stage.addEventListener('mousedown', e => {
+    if(e.button === 0 && chalOn) fireHook();
+  });
+  stage.addEventListener('contextmenu', e => { if(chalOn) e.preventDefault(); });
   // 切走标签页时清空按键，避免回来后角色一直往一个方向跑
   window.addEventListener('blur', () => { for(const k in keys) delete keys[k]; });
   // 视口变化：重算世界缩放并重新钳制镜头
@@ -2392,7 +4310,7 @@
     stage.style.setProperty('--s', sc().toFixed(5));
     if(!inLevel) return;
     camX = clampCam(camX);
-    render();
+    if(chalOn) syncWorldWidth(); else render();
   });
 </script>
 </body>
