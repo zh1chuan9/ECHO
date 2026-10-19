@@ -132,6 +132,11 @@
   .slab-f{fill:#0c141d;stroke:#2c4356;stroke-width:3.4}
   .edge{stroke:#3a5c7c;stroke-width:3.6;opacity:.95}      /* 受光的顶边：加深加厚 */
   .edge-dim{stroke:#233849;stroke-width:3;opacity:.62}    /* 背光的底边 / 沟壁 */
+  /* 实心障碍（悬空方块与实心墙）：整体描边改成暖橙，和蓝灰地面、暗红钉刺拉开层次，
+     让它一眼就是"挡路的硬东西"，而不是背景的一部分 */
+  .obst-f{stroke:#c9772f}
+  .obst-edge{stroke:#f0a94e;stroke-width:3.6;opacity:.95}
+  .obst-edge-dim{stroke:#7e4519;stroke-width:3;opacity:.66}
 
   .cp-post{stroke:rgba(190,215,245,.26);stroke-width:2}
   /* 出生点立柱只在开场"卡住"阶段当提示的杆子出现：落地的瞬间浮现，挣脱的瞬间消失 */
@@ -213,17 +218,20 @@
      和"晕眩/朝上"同一套做法 —— 每种表情是一组独立元素，靠 #hero 的 data-mood 切换显隐，
      所以既不会和朝向/眨眼的 transform 打架，也不会被眨眼动画盖掉 */
   .mood-eye,.mood-mouth{display:none}
-  .hero-eye-slit{fill:#0b1219}
-  .hero-eye-wide{fill:#0b1219}
-  .hero-glint{fill:#f2f6fb}
+  /* 微表情的眼睛统一画成 -90° 的 V（> 折角）：冲刺时小一点、急坠时大一点 */
+  .hero-eye-slit,.hero-eye-wide{fill:none;stroke:#0b1219;stroke-linecap:round;stroke-linejoin:round}
+  .hero-eye-slit{stroke-width:2}
+  .hero-eye-wide{stroke-width:2.6}
   .hero-mouth{fill:none;stroke:#0b1219;stroke-width:1.9;stroke-linecap:round}
   .hero-mouth-open{fill:#0b1219}
+  /* 主角朝左时，折角眼（V）也镜像过去，折角始终朝着前进方向 */
+  #hero[data-face="left"] .mood-eye{transform:scaleX(-1);
+    transform-box:fill-box;transform-origin:center}
   /* 冲刺：眯眼 + 咬牙 */
   #hero[data-mood="dash"] .eye-wrap{display:none}
   #hero[data-mood="dash"] .mood-eye,
   #hero[data-mood="dash"] .mood-mouth{display:block}
   #hero[data-mood="dash"] .hero-eye-wide,
-  #hero[data-mood="dash"] .hero-glint,
   #hero[data-mood="dash"] .hero-mouth-open{display:none}
   /* 急坠：瞪圆 + 张嘴 */
   #hero[data-mood="fall"] .eye-wrap{display:none}
@@ -354,6 +362,7 @@
     .item.knock .ind svg,.item.knock .ind .tick{animation:none}
     /* 挑战模式：吸积弧、吸力虚线、螺旋碎屑、危险脉动与碎裂坠落一并停掉 */
     .orb-spin,.orb-dot,.hole-pull,.hole-mote{animation:none}
+    .start-arrow path,.start-arrow line{animation:none;stroke-dashoffset:0}
     .danger.on{animation:none;opacity:.4}
     .crumble.fall .slab-f,.crumble.fall .edge{animation:none;opacity:.22}
     /* 拾取球的呼吸浮动、拾取火花、冲刺残影与速度线也一并停掉（火花仍会短暂闪一下再被回收） */
@@ -669,6 +678,12 @@
   /* 可视射程圈：靠近了才渐显，走进圈里就能勾（半径 = 这颗球自己的 range） */
   .orb-range{fill:none;stroke:rgba(246,220,150,.24);stroke-width:1.2;
     stroke-dasharray:7 11;stroke-linecap:round}
+  /* 触发小圈：黄球周围一圈略大的虚线环，进圈即可按空格引爆（大跳）。缓闪提示"这里能跳" */
+  .orb-trig{fill:none;stroke:rgba(246,220,150,.52);stroke-width:1.7;
+    stroke-dasharray:5 7;stroke-linecap:round;
+    transform-box:fill-box;transform-origin:center;
+    animation:orbTrig 2s ease-in-out infinite}
+  @keyframes orbTrig{0%,100%{transform:scale(.94);opacity:.42}50%{transform:scale(1.05);opacity:.85}}
   /* 抓钩缆绳：从主角伸向黄球，勾住时绳端亮起一个抓取点 */
   .rope{stroke:rgba(246,220,150,.55);stroke-width:1.8;stroke-linecap:round}
   .rope.hot{stroke:rgba(246,220,150,.9)}
@@ -752,6 +767,26 @@
   .spring-base{fill:#0c141d;stroke:#2c4356;stroke-width:3;opacity:1}
   .spring-plate{fill:none;stroke:rgba(246,220,150,.85);stroke-width:2.4}
   .spring-coil{fill:none;stroke:rgba(246,220,150,.5);stroke-width:1.3;stroke-linecap:round}
+  /* 加速平台：踩上去就朝前顶出速度的跑道，用青蓝箭头和弹簧的黄区分开 */
+  .boost-base{fill:#0b1a24;stroke:#2c6f8c;stroke-width:3;opacity:1}
+  .boost-arrow{fill:none;stroke:rgba(120,224,246,.9);stroke-width:3.2;
+    stroke-linecap:round;stroke-linejoin:round}
+  .boost-arrow.b{stroke:rgba(120,224,246,.45)}
+  /* 挑战起点的大箭头：一笔一划地画出来 —— 箭杆、上翼、下翼三段描边依次显形。
+     每段的实际长度由内联的 --len 给出，动画时长/延迟由 --dur / --dly 控制；
+     stroke-dasharray 与 dashoffset 都吃这个长度，于是"描边从无到有"被逐段拉出来 */
+  .start-arrow path,.start-arrow line{
+    /* 白、细、带微光 —— 和主页面标题那四个字母用的是同一套写法：
+       同样的描边白 #f2f6fb、同样的柔光 drop-shadow，只是这里没有字号可缩，所以线宽直接取细值 */
+    fill:none;stroke:#f2f6fb;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;
+    opacity:.96;
+    stroke-dasharray:var(--len);stroke-dashoffset:var(--len);
+    animation-name:arrowDraw;animation-duration:var(--dur);animation-timing-function:linear;
+    animation-fill-mode:both;animation-delay:var(--dly);
+    animation-play-state:paused;                     /* 先按下不动，等倒数的第 2 秒由 JS 放行 */
+    filter:drop-shadow(0 0 6px rgba(185,210,245,.4)) drop-shadow(0 0 22px rgba(140,175,225,.2))}
+  .start-arrow.on path,.start-arrow.on line{animation-play-state:running}
+  @keyframes arrowDraw{to{stroke-dashoffset:0}}
   /* 碎裂方块：悬空的薄板，踩上去亮起裂纹然后塌掉 */
   .crumble .slab-f{fill:#121b26}
   .crumble .edge{stroke:#4d7a9d;stroke-width:3.2;opacity:.9}
@@ -2140,9 +2175,9 @@
     // 微表情：一组"眯眼 + 瞪眼"、一组"咬牙 + 张嘴"。默认全隐藏，
     // 由 #hero 的 data-mood（dash / fall）切换显隐，和上面的晕眩眼、朝上眼互不干扰
     const mEye = mk('g', {class:'mood-eye'});
-    mEye.appendChild(mk('rect', {x:10.5, y:35.6, width:9, height:2.6, rx:1.3, class:'hero-eye-slit'}));
-    mEye.appendChild(mk('ellipse', {cx:16.4, cy:36.8, rx:5, ry:4.6, class:'hero-eye-wide'}));
-    mEye.appendChild(mk('circle', {cx:18.4, cy:35.2, r:1.4, class:'hero-glint'}));
+    // 两种表情的眼睛都是 -90° 的 V（> 形，顶点朝前进方向）：冲刺是小折角、急坠是大折角
+    mEye.appendChild(mk('path', {d:'M12 33.5 L17.8 36.8 L12 40.1', class:'hero-eye-slit'}));
+    mEye.appendChild(mk('path', {d:'M10.4 31.2 L20.6 36.8 L10.4 42.4', class:'hero-eye-wide'}));
     el.appendChild(mEye);
     const mMouth = mk('g', {class:'mood-mouth'});
     mMouth.appendChild(mk('path', {d:'M11 44.4 L21 44.4', class:'hero-mouth'}));       // 咬牙：一短横
@@ -2180,9 +2215,9 @@
 
     SOLIDS.forEach(([x, y, w, h, type]) => {
       const ground = type === 'g';
-      gTerrain.appendChild(mk('rect', {x, y, width:w, height:ground ? WORLD_H - y : h, class:ground ? 'slab-g' : 'slab-f'}));
-      gTerrain.appendChild(mk('line', {x1:x, y1:y + 1, x2:x + w, y2:y + 1, class:'edge'}));   // 受光的顶边
-      if(!ground) gTerrain.appendChild(mk('line', {x1:x, y1:y + h - 1, x2:x + w, y2:y + h - 1, class:'edge-dim'}));
+      gTerrain.appendChild(mk('rect', {x, y, width:w, height:ground ? WORLD_H - y : h, class:ground ? 'slab-g' : 'slab-f obst-f'}));
+      gTerrain.appendChild(mk('line', {x1:x, y1:y + 1, x2:x + w, y2:y + 1, class:ground ? 'edge' : 'obst-edge'}));   // 受光的顶边
+      if(!ground) gTerrain.appendChild(mk('line', {x1:x, y1:y + h - 1, x2:x + w, y2:y + h - 1, class:'obst-edge-dim'}));
       rects.push({x0:x, y0:y, x1:x + w, y1:ground ? WORLD_H : y + h});
     });
 
@@ -3130,10 +3165,15 @@
     hookRange:620, hookPull:1050,
     orbBurstVy:-1240,                                   // 在黄球上起跳＝引爆它：一次远超普通跳的暴冲（顶点 320，约普通跳的 2.5 倍；
                                                         // 球顶 y=366，所以顶点停在 y=46，主角全程留在画面内）
+    orbBurstVx:470,                                     // 大跳不只往上，还朝前爆冲一段：配合 1.03s 滞空，
+                                                        // 前冲约 480 单位 —— 一次能跨过此前跳不过的沟
+    orbRing:32,                                         // 黄球周围的"触发小圈"半径：主角中心进圈 + 按跳键即引爆大跳
+    orbT:1.0,                                           // 引爆后 1 秒内输入不接管速度：前冲不会半路被"松键/无输入减速"吃掉，
+                                                        // 也保证轻点空格松手时那一冲是完整的。够覆盖整段滞空
     orbBurstPts:200,                                    // 引爆一颗黄球的额外加分（这是技术动作的奖励，与技能分一起算）
     // 距离爬升：每跑 500 米，黑洞与主角的速度一起 ×1.2。两者等比例提升，所以"黑洞相对主角"
     // 的快慢关系不变，变的只是整局的节奏 —— 跑得越远，一切都越快
-    rampStep:500, rampMul:.2,
+    rampStep:500, rampMul:.4,
     // 死亡：主角处炸开一场演出（比普通爆散更大），演完才弹结算窗；
     // 无障碍（reduced-motion）下跳过这场演出，直接出结算
     deathDur:1.15, deathN:64, deathRing:150,
@@ -3145,8 +3185,8 @@
     // 火球：跑到 fireStart 米之后才开火，此后每隔一小段时间从画面右侧飞来一小排，
     // 高度贴近地面、只能靠跳过去，碰到即死。它按规则保持自己的固定速度（提速只给黑洞与主角）——
     // 这很关键：火球的速度若也乘倍率，加上主角变快，它掠过屏幕的时间会缩到 0.3 秒以内，变成"看到就死"
-    fireStart:1000, fireGap:3.2, fireGapX:240, fireN:2,
-    fireV:520, fireR:15, fireY:664, fireYJit:18, fireBob:6,
+    fireStart:1000, fireGap:4.8, fireGapX:320, fireN:2,          // 间隔拉远：一小排更稀、排与排之间也更久
+    fireV:380, fireR:15, fireY:664, fireYJit:18, fireBob:6,      // 飞得更慢，给玩家更从容的起跳窗口
     // 黑洞：一个圆（圆心锁在世界中线、半径 270 —— 下缘正好切到地面线，所以主角能到的
     // 每个高度都还在视界里，不可能从上下绕过去），只沿 x 轴推进
     holeR:270, holeCy:WORLD_H / 2, holeV:280, holeLeash:1250,
@@ -3156,8 +3196,9 @@
     holeSpin:14,                                        // 时空环的缓转速度（度/秒）；内环反向、碎屑更快
     // 钉刺／弹簧／碎裂方块／移动平台
     springVy:-1320,                                     // 弹簧弹速：顶点 352
-    crumbHold:.38,                                      // 碎裂方块踩上去后坚持多久就塌
+    crumbHold:.05,                                      // 碎裂方块踩上去几乎立刻塌（一踩即消，不再给 .38s 的缓冲）
     moverV:260,                                         // 移动平台横移速度
+    boostVx:900, boostT:.5,                             // 加速平台：踩上去把水平速度顶到 900 并维持 0.5s（约冲 450 单位）
     // 记分
     distDiv:10,
     skillPts:{dj:16, dash:26, hook:40, wall:22, spring:14},   // 各技能的基础分
@@ -3195,19 +3236,23 @@
   //   oneways:[[x,y,w,h]...]（可穿）， crumbles:[[x,y,w,h]...]（踩上会塌）, pad:[[x,y,w,h]...]（弹簧，非实体触发）,
   //   spikes:[[x,y,w,h]...]（碰到即死）, movers:[[左端x,右端x,顶边y,底边y]...]（横移渡板）, orbs:[[x,y,r,range]...]}
   const SEGS = {
-    // 空地：纯地板 + 一个一跨即过的矮墩，纯粹让主角喘口气、也是黑洞唯一的追近窗口
+    // 空地：纯地板 + 一个一跨即过的矮墩，再加一块高处的悬空平台（可选落脚），
+    // 让主角喘口气、也是黑洞唯一的追近窗口
     flat(x){
-      return {w:520, runs:[[x, 520]], blocks:[[x + 322, CF - 46, 56, 46]], orbs:[]};
+      return {w:520, runs:[[x, 520]], blocks:[[x + 322, CF - 46, 56, 46],
+              [x + 110, CF - 152, 96, 22]], orbs:[]};
     },
     // 二段跳：225 助跑 → 270 宽的沟 → 落点。沟里不放任何落脚点，单跳过不去
     // 单跳 212 差 58；二段跳 352 有 82 余量，起跳点还有 110 单位容错
     dj(x){
-      return {w:900, runs:[[x, 450], [x + 720, 180]], blocks:[], orbs:[]};
+      return {w:900, runs:[[x, 450], [x + 720, 180]], orbs:[],
+              blocks:[[x + 560, CF - 112, 92, 22]]};   // 沟中一块悬空平台：二段跳落上去更稳
     },
     // 冲刺：220 助跑 → 360 宽的沟 → 落点。沟里不放任何落脚点
     // 二段跳的极限也在 400 上下，所以这段的沟必须盯着冲刺的速度算
     dash(x){
-      return {w:1020, runs:[[x, 440], [x + 800, 220]], blocks:[], orbs:[]};
+      return {w:1020, runs:[[x, 440], [x + 800, 220]], orbs:[],
+              blocks:[[x + 545, CF - 118, 84, 20], [x + 680, CF - 208, 84, 20]]};   // 沟中两级悬空平台
     },
     // 蹬墙跳：300 高的实心墙，跳不上也绕不过，必须贴墙连蹬上去；墙后是平地，
     // 不留坑 —— 免得刚爬上来就一脚踩空（爬墙本身已经够难）
@@ -3222,10 +3267,10 @@
       return {w:1160, runs:[[x, 400], [x + 1040, 120]],
               blocks:[], orbs:[[x + 820, 440, 22, 620]]};
     },
-    // 钉刺：两段钉床中间留 116 的落脚，靠连续两次单跳的节奏过去（单跳横距 216）
+    // 钉刺：两段钉床中间留 204 的落脚（比以前宽），单跳横距 216 绰绰有余，节奏更从容
     spike(x){
-      return {w:640, runs:[[x, 640]], blocks:[], orbs:[],
-              spikes:[[x + 250, CF - 34, 64, 34], [x + 430, CF - 34, 64, 34]]};
+      return {w:760, runs:[[x, 760]], blocks:[], orbs:[],
+              spikes:[[x + 230, CF - 34, 64, 34], [x + 498, CF - 34, 64, 34]]};
     },
     // 弹簧：垫子顶着墙根放，跑过去必踩中（不会被跳过去落在垫子和墙之间的缝里）；
     // 弹到 352 高，越过 260 高的实心墙顶；就算贴墙起跳也会顺着墙面滑上去落到墙顶
@@ -3252,9 +3297,41 @@
     ferry(x){
       return {w:1040, runs:[[x, 420], [x + 920, 120]], blocks:[], orbs:[],
               movers:[[x + 460, x + 780, CF - 4, CF + 16]]};
+    },
+    // 浮空平台：一串高低错落的悬空平台横跨深渊，踩着它们跳过去；平台间距都在单跳范围内
+    float(x){
+      return {w:1100, runs:[[x, 380], [x + 920, 180]], orbs:[],
+              blocks:[[x + 500, CF - 108, 96, 22], [x + 660, CF - 196, 96, 22],
+                      [x + 812, CF - 108, 96, 22]]};
+    },
+    // 加速平台：一条直跑道，中间一块加速垫 —— 踩上去瞬间把水平速度顶上去，冲得又快又远；
+    // 前方配一块悬空平台，可以借速度做花式跳跃
+    speed(x){
+      return {w:1000, runs:[[x, 1000]], blocks:[[x + 640, CF - 132, 88, 22]], orbs:[],
+              boost:[[x + 380, CF - 22, 120, 22]]};
+    },
+    // 楼梯：四级上行台阶登顶（每级 40 高，单跳轻松跨多级），再四级下行，形成一座阶梯小丘
+    stairs(x){
+      return {w:920, runs:[[x, 920]], orbs:[], blocks:[
+              [x + 240, CF - 40, 80, 40],   [x + 320, CF - 80, 80, 80],
+              [x + 400, CF - 120, 80, 120], [x + 480, CF - 160, 120, 160],
+              [x + 600, CF - 120, 80, 120], [x + 680, CF - 80, 80, 80],
+              [x + 760, CF - 40, 80, 40]]};
+    },
+    // 滑坡：一小段浅台阶缓上坡登顶（视觉上就是一条坡），坡顶平台之后是一段对称的下坡，
+    // 可以顺着坡一路滑下去。台阶小、落差浅，碰撞仍是轴对齐的矩形，所见即所碰
+    slope(x){
+      const b = [], rise = 20, run = 88;
+      for(let k = 0; k < 5; k++)                 // 上坡：5 级浅台阶
+        b.push([x + 180 + k * run, CF - (k + 1) * rise, run, (k + 1) * rise]);
+      b.push([x + 180 + 5 * run, CF - 5 * rise, 130, 5 * rise]);      // 坡顶平台
+      for(let k = 5; k > 0; k--)                 // 下坡：镜像 5 级，滑下去
+        b.push([x + 310 + 5 * run + (5 - k) * run, CF - k * rise, run, k * rise]);
+      return {w:1260, runs:[[x, 1260]], blocks:b, orbs:[]};
     }
   };
-  const SEG_KEYS = ['flat', 'dj', 'dash', 'wall', 'hook', 'spike', 'spring', 'crumble', 'oneway', 'ferry'];
+  const SEG_KEYS = ['flat', 'dj', 'dash', 'wall', 'hook', 'spike', 'spring', 'crumble',
+                    'oneway', 'ferry', 'float', 'speed', 'stairs', 'slope'];
   let segFirst = [];                                  // 开局前四段：保证四个技能都被用上，之后按池随机
 
   // 带障碍的路段：钉刺扎人、塌方下沉、单向平台和渡板都要求操作精度
@@ -3290,6 +3367,8 @@
     const ring = mk('circle', {cx:ox, cy:oy, r:R, class:'orb-range', opacity:0});
     g.appendChild(ring);
     g.appendChild(mk('circle', {cx:ox, cy:oy, r:r + 16, class:'orb-halo'}));
+    // 触发小圈：进圈就能按空格引爆这颗黄球（大跳）。比球体大一圈、带缓闪，一眼看出"到这里就跳"
+    g.appendChild(mk('circle', {cx:ox, cy:oy, r:r + CHAL.orbRing, class:'orb-trig'}));
     const sp = mk('g', {class:'orb-spin'});
     sp.appendChild(mk('circle', {cx:ox, cy:oy, r:r + 9, class:'orb-dash'}));
     g.appendChild(sp);
@@ -3338,6 +3417,22 @@
     g.appendChild(mk('line', {x1:0, y1:2, x2:bw, y2:2, class:'spring-plate'}));
     gTerrain.appendChild(g);
     chal.pads.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx});
+  }
+
+  // 加速平台：不进 rects（不挡路），踩上去的瞬间把水平速度顶到 boostVx，朝当前前进方向弹出
+  function addBoost(bx, by, bw, bh, sx){
+    const g = mk('g', {class:'boost', 'data-sx':sx, transform:'translate(' + bx + ' ' + by + ')'});
+    g.appendChild(mk('rect', {x:0, y:0, width:bw, height:bh, class:'boost-base'}));
+    const cy = bh * .5, a = Math.min(bw * .26, 22);        // 两枚朝右的箭头（>>），指示加速方向
+    for(let i = 0; i < 2; i++){
+      const x0 = bw * .24 + i * a * .8;
+      g.appendChild(mk('path', {d:'M' + x0.toFixed(1) + ' ' + (cy - a * .5).toFixed(1) +
+        ' L' + (x0 + a * .6).toFixed(1) + ' ' + cy.toFixed(1) +
+        ' L' + x0.toFixed(1) + ' ' + (cy + a * .5).toFixed(1),
+        class:'boost-arrow' + (i ? ' b' : '')}));
+    }
+    gTerrain.appendChild(g);
+    chal.boosts.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:sx, used:false});
   }
 
   // 碎裂方块：悬空薄板，踩上去 crumbHold 秒后就塌（塌了立刻从碰撞里摘掉）
@@ -3396,15 +3491,16 @@
       rects.push({x0:rx, y0:CF, x1:rx + rw, y1:WORLD_H, sx:x});
     });
     (seg.blocks || []).forEach(([bx, by, bw, bh]) => {
-      gTerrain.appendChild(mk('rect', {x:bx, y:by, width:bw, height:bh, class:'slab-f', 'data-sx':x}));
-      gTerrain.appendChild(mk('line', {x1:bx, y1:by + 1, x2:bx + bw, y2:by + 1, class:'edge', 'data-sx':x}));
+      gTerrain.appendChild(mk('rect', {x:bx, y:by, width:bw, height:bh, class:'slab-f obst-f', 'data-sx':x}));
+      gTerrain.appendChild(mk('line', {x1:bx, y1:by + 1, x2:bx + bw, y2:by + 1, class:'obst-edge', 'data-sx':x}));
       if(by + bh - 1 > by) gTerrain.appendChild(mk('line', {x1:bx, y1:by + bh - 1,
-        x2:bx + bw, y2:by + bh - 1, class:'edge-dim', 'data-sx':x}));
+        x2:bx + bw, y2:by + bh - 1, class:'obst-edge-dim', 'data-sx':x}));
       rects.push({x0:bx, y0:by, x1:bx + bw, y1:by + bh, sx:x});
     });
     (seg.oneways  || []).forEach(a => addOneWay(a[0], a[1], a[2], a[3], x));
     (seg.crumbles|| []).forEach(a => addCrumb(a[0], a[1], a[2], a[3], x));
     (seg.pad     || []).forEach(a => addPad(a[0], a[1], a[2], a[3], x));
+    (seg.boost   || []).forEach(a => addBoost(a[0], a[1], a[2], a[3], x));
     (seg.spikes  || []).forEach(a => addSpike(a[0], a[1], a[2], a[3], x));
     (seg.movers  || []).forEach(a => addMover(a[0], a[1], a[2], a[3], x));
     (seg.orbs    || []).forEach(([ox, oy, orr, orange]) => addOrb(ox, oy, orr, orange, x));
@@ -3424,6 +3520,7 @@
       chal.picks   = chal.picks.filter(p => p.sx !== s.x);
       chal.hazards = chal.hazards.filter(h => h.sx !== s.x);
       chal.pads    = chal.pads.filter(p => p.sx !== s.x);
+      chal.boosts  = chal.boosts.filter(p => p.sx !== s.x);
       chal.crumbs  = chal.crumbs.filter(cr => cr.sx !== s.x);
       chal.movers  = chal.movers.filter(m => m.sx !== s.x);
       for(const n of [...gTerrain.children]) if(+n.getAttribute('data-sx') === s.x) n.remove();
@@ -3517,7 +3614,7 @@
   function freeSpans(seg){
     const cuts = [];
     const cut = arr => (arr || []).forEach(o => cuts.push([+o[0], +o[0] + +o[2]]));
-    cut(seg.blocks); cut(seg.spikes); cut(seg.crumbles);
+    cut(seg.blocks); cut(seg.spikes); cut(seg.crumbles); cut(seg.boost);
     (seg.movers || []).forEach(m => cuts.push([+m[0], +m[1] + MOVER_W]));
     const out = [];
     for(const run of (seg.runs || [])){
@@ -3711,6 +3808,11 @@
     cdownN.classList.remove('pop');
     void cdownN.offsetWidth;        // 强制回流，让每个数字都能重播一次弹入动画
     cdownN.classList.add('pop');
+    // 起点大箭头：数字跳到"倒数第 2 秒"这一刻给它放行，一支笔画出来 —— 和画面上的数字严格同步
+    if(n <= CHAL.countT - 1){
+      const sa = gTerrain.querySelector('.start-arrow');
+      if(sa) sa.classList.add('on');
+    }
   }
 
   // ---------- 火球（跑到 CHAL.fireStart 米之后才开火） ----------
@@ -3760,6 +3862,8 @@
     if(c.over) return;
     c.t += dt;
     if(c.dashT > 0) c.dashT = Math.max(0, c.dashT - dt);
+    if(c.boostT > 0) c.boostT = Math.max(0, c.boostT - dt);
+    if(c.orbT > 0) c.orbT = Math.max(0, c.orbT - dt);
     if(c.dashCd > 0) c.dashCd = Math.max(0, c.dashCd - dt);
     stepPicks(dt);                               // 拾取球 + 金球窗口计时（放在冻结/钩爪之前，
                                                  // 钩爪路上擦到的球也算捡到、窗口计时也不会被卡住）
@@ -3769,6 +3873,29 @@
     updateCrumbs(dt);
 
     const dir = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
+
+    // 黄球大跳（统一触发）：主角中心只要进了某颗黄球的触发小圈，并且此刻按着/刚按过跳键，
+    // 就立刻引爆这颗球 —— 不管主角是在跑、在跳、正被钩爪拽着，还是已经站在球顶。
+    // 放在冻结/钩爪判定之前，所以"在黄圈里按空格"一定会触发，不再取决于落位的那一瞬间。
+    // 反过来，只按方向键不会引爆：站着走下球，球还留在原地
+    if(hero.buffer > 0){
+      const hx = hero.x + HERO_W / 2, hy = hero.y + HERO_H / 2;
+      for(const o of c.orbs){
+        if(Math.hypot(o.x - hx, o.y - hy) > o.r + CHAL.orbRing) continue;
+        const go = dir || (hero.face === 'right' ? 1 : -1);
+        c.frozen = false; c.frozenOrb = null; c.hook = null;   // 不管之前在哪个状态，都从这一刻解放出来
+        hero.vx = go * CHAL.orbBurstVx;
+        hero.vy = CHAL.orbBurstVy;
+        hero.onGround = false; hero.coyote = 0; hero.buffer = 0; hero.djAvail = true;
+        hero.face = go > 0 ? 'right' : 'left';
+        c.orbT = CHAL.orbT;                                     // 这一冲期间输入不接管速度（含"松键不截断"）
+        burstFx(o.x, o.y, 'orb');
+        removeOrb(o);
+        awardPts(CHAL.orbBurstPts, 'skill');
+        c.ropeKey = ''; drawRope();                             // 钩子如果在手上，一并收掉
+        break;
+      }
+    }
 
     if(c.frozen){               // 站在黄球上：完全静止，按方向键或跳键才解开
       // 判定放宽：抓钩拽人的整段路上、以及落位前一瞬按过的跳键都算数 —— 那些按键记在跳跃缓冲里
@@ -3781,17 +3908,26 @@
         const orb = c.frozenOrb;
         c.frozen = false; c.frozenOrb = null; c.hook = null;
         hero.onGround = false;
-        hero.vx = dir * 140;
-        // 按跳 = 引爆脚下这颗黄球：一次远超普通跳的暴冲 + 黄色粒子爆散，球随之消失；
+        // 按跳 = 引爆脚下这颗黄球：一次远超普通跳的暴冲，而且不只往上 —— 同时朝前冲一段
+        // （vx = ±orbBurstVx），配合约 1 秒滞空能一口气跨过更远的沟；球随之爆散消失。
         // 只按方向键则是正常走下球，球还留在原地，以后还能再勾
-        hero.vy = jump ? CHAL.orbBurstVy : 0;
-        if(jump && orb){
-          burstFx(orb.x, orb.y, 'orb');
-          removeOrb(orb);
-          awardPts(CHAL.orbBurstPts, 'skill');       // 引爆黄球额外 +200（窗口里再吃半倍）
+        if(jump){
+          const go = dir || (hero.face === 'right' ? 1 : -1);
+          hero.vx = go * CHAL.orbBurstVx;
+          hero.vy = CHAL.orbBurstVy;
+          hero.face = go > 0 ? 'right' : 'left';
+          c.orbT = CHAL.orbT;                        // 同上：站在球顶引爆时也给同样的控制豁免
+          if(orb){
+            burstFx(orb.x, orb.y, 'orb');
+            removeOrb(orb);
+            awardPts(CHAL.orbBurstPts, 'skill');     // 引爆黄球额外 +200（窗口里再吃半倍）
+          }
+        }else{
+          hero.vx = dir * 140;
+          hero.vy = 0;
+          if(dir) hero.face = dir > 0 ? 'right' : 'left';
         }
         hero.coyote = 0; hero.buffer = 0; hero.djAvail = true;
-        if(dir) hero.face = dir > 0 ? 'right' : 'left';
       }else{
         advanceHole(dt);
         return;
@@ -3803,8 +3939,9 @@
       const hx = hero.x + HERO_W / 2, hy = hero.y + HERO_H / 2;
       const dx = o.x - hx, dy = o.y - hy, d = Math.hypot(dx, dy) || 1;
       const restX = o.x - HERO_W / 2, restY = o.y - o.r - HERO_H;
-      // 收到"站上球顶"的距离就落位，不再外拽：判定阈值比落位距多 2 单位
-      if(d <= o.r + HERO_H / 2 + 2){
+      // 收到"进触发小圈"的距离就落位，不再外拽：判定放宽到球半径 + 小圈半径 + 半个身高，
+      // 所以刚好落进球顶的小圈里就算数，进圈后按空格就能引爆
+      if(d <= o.r + CHAL.orbRing + HERO_H / 2){
         c.frozen = true; c.frozenOrb = o; c.hook = null;      // 记住落在哪颗球上，按空格才能引爆它
         hero.x = restX; hero.y = restY;
         hero.vx = 0; hero.vy = 0; hero.onGround = false;
@@ -3821,7 +3958,7 @@
     }
 
     if(dir) hero.face = dir > 0 ? 'right' : 'left';
-    const dashing = c.dashT > 0;
+    const dashing = c.dashT > 0 || c.boostT > 0 || c.orbT > 0;   // 冲刺/加速平台/黄球大跳这一冲期间都不接管速度，让提速吃满
     const ws = wallSide();
     const sliding = !dashing && !hero.onGround && ws !== 0 && dir === ws;
 
@@ -3867,6 +4004,17 @@
           break;
         }
       }
+    }
+    // 加速平台：踩上去的瞬间朝前进方向顶出速度，每进一次触发一次（站着不动不会反复叠加）
+    for(const b of c.boosts){
+      const on = hero.y + HERO_H > b.y0 && hero.y < b.y1 && hero.x + HERO_W > b.x0 && hero.x < b.x1;
+      if(on && !b.used){
+        b.used = true;
+        const go = dir || (hero.face === 'right' ? 1 : -1);
+        hero.vx = go * CHAL.boostVx;
+        hero.face = go > 0 ? 'right' : 'left';
+        c.boostT = CHAL.boostT;                       // 维持一小段高速，冲得又快又远
+      }else if(!on) b.used = false;
     }
     // 钉刺：碰到即死
     for(const s of c.hazards){
@@ -4029,10 +4177,10 @@
   }
 
   function buildChallenge(){
-    chal = {t:0, orbs:[], picks:[], tmp:[], hazards:[], pads:[], crumbs:[], movers:[],
+    chal = {t:0, orbs:[], picks:[], tmp:[], hazards:[], pads:[], boosts:[], crumbs:[], movers:[],
             skillPts:0, pickPts:0, goldPts:0, goldT:0, distPt:0, whiteGot:0, goldGot:0,
             goldOn:false,
-            dashT:0, dashCd:0, hook:null, frozen:false, frozenOrb:null, over:false,
+            dashT:0, dashCd:0, boostT:0, orbT:0, hook:null, frozen:false, frozenOrb:null, over:false,
             dying:false, deathT:0, why:'',
             fire:[], fireT:CHAL.fireGap,                     // 火球：跑到 CHAL.fireStart 米才开始生成
             holeX:-420, maxX:0, startX:0, hudKey:'', ropeKey:''};   // 黑洞从画面左外起步
@@ -4057,6 +4205,25 @@
     gTerrain.appendChild(mk('line', {x1:-60, y1:CF + 1, x2:660, y2:CF + 1, class:'edge'}));
     rects.push({x0:-60, y0:CF, x1:660, y1:WORLD_H});
     chalGenX = 620;
+
+    // 起点的大箭头：一笔一划地画出来，指向前进方向。三段描边依次显形 —— 箭杆 → 上翼 → 下翼；
+    // 每段的长度写进 --len（描边靠它算"要画多长"），--dur/--dly 控制这一笔的时长与起笔时刻。
+    // 起笔时刻交给倒数的第 2 秒：syncCountdown 在数字跳到第 2 秒时给这组描边放行（.start-arrow.on），
+    // 所以和画面上的数字严格同步 —— 黑幕占掉的那段"墙钟"不算数，它不会提前跑完。
+    // 整支箭头飘在起点平台上方、主角起点的右边，每开一局都会重画一遍
+    {
+      const g = mk('g', {class:'start-arrow'});
+      const ax0 = 190, ax1 = 400, ay = 600;              // 箭杆：从 ax0 拉到 ax1
+      const hw = 104, hh = 86;                           // 箭翼：从箭尖斜出去这么远（含高度）
+      const hl = Math.round(Math.hypot(hw, hh));         // 单侧箭翼的实际长度
+      g.appendChild(mk('line', {x1:ax0, y1:ay, x2:ax1, y2:ay,
+        style:'--len:' + (ax1 - ax0) + 'px;--dur:.4s;--dly:0s'}));                  // 第一笔：箭杆
+      g.appendChild(mk('line', {x1:ax1 - hw, y1:ay - hh, x2:ax1, y2:ay,
+        style:'--len:' + hl + 'px;--dur:.28s;--dly:.4s'}));                         // 第二笔：上翼
+      g.appendChild(mk('line', {x1:ax1 - hw, y1:ay + hh, x2:ax1, y2:ay,
+        style:'--len:' + hl + 'px;--dur:.28s;--dly:.66s'}));                        // 第三笔：下翼
+      gTerrain.appendChild(g);
+    }
 
     SOLIDS = []; CPS = []; SPAWN = {x:110, y:CF - HERO_H}; GOAL = null;
     ALTAR = null; GATE = null;                       // 挑战模式不走剧情关卡，这几项一律清空
@@ -4292,6 +4459,7 @@
     const kk = e.key.toLowerCase();
     keys[kk] = false;
     if(cutLock > 0) return;                          // 挣脱上冲期间不截断速度
+    if(chalOn && chal && chal.orbT > 0) return;      // 黄球大跳这一冲期间：松键也不截断上升速度
     if(learn) return;                                // 习得二段跳的过场期间不截断速度
     if((kk === 'arrowup' || kk === 'w' || kk === ' ') && inLevel && hero.vy < cutV())
       hero.vy = cutV();
