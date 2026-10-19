@@ -517,7 +517,7 @@
   /* 双击那三个字：先"崩"两下（左右急抖两下），随后蹦出这只小人（内联矢量图）。
      之后它自己跳：蹲下蓄力、伸张往前蹦（弹簧形变），掉头时"以图片中央为轴"镜像转身，
      方向和间隔都随机，时间无限。点它一下会冒个思维气泡（可搓破、也会自己破）；
-     按"返回"离场它就自爆成一撮蓝色粒子 —— 一次加载只灵一次，爆完再点没反应，除非刷新页面 */
+     按"返回"离场它就自爆成一撮蓝色粒子 —— 爆完还能再双击这三个字，重新放一只出来 */
   .egg-fish{-webkit-user-select:none;user-select:none;cursor:pointer}   /* 鼠标移到"小肥鱼"上就变可点的手型 */
   .egg-fish.crack{animation:fishCrack .38s linear 1}
   @keyframes fishCrack{
@@ -611,7 +611,7 @@
       linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left bottom/16px 1px no-repeat,
       linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) left bottom/1px 16px no-repeat,
       linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right bottom/16px 1px no-repeat,
-      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right bottom/16px 1px no-repeat;
+      linear-gradient(rgba(200,226,255,.42),rgba(200,226,255,.42)) right bottom/1px 16px no-repeat;
   }
 
   .overlay.on .panel.show .slot{animation-play-state:running}
@@ -4495,7 +4495,7 @@
   // 双击那三个字 → 字先"崩"两下 → 蹦出这只小人（内联矢量图）。
   // 之后它自己跳：蹲下蓄力、伸张往前蹦（弹簧形变）；要掉头就先播"转身"（以图片中央为轴镜像转），
   // 跳的频率与方向都随机，时间无限。点它一下冒个思维气泡（可搓破、也会自己破），文案随机取；
-  // 按"返回"离场它就自爆成一撮蓝色粒子 —— 一次加载只灵一次，爆完再点没反应，除非刷新页面
+  // 按"返回"离场它就自爆成一撮蓝色粒子 —— 爆完再次双击这三个字还能重新放出来，无限次
   const eggFish = document.getElementById('eggFish');
   const eggWhale = document.getElementById('eggWhale');
   const eggWhaleSide = eggWhale.firstElementChild;   // .egg-whale-i：只写弹簧蹲伸
@@ -4581,6 +4581,7 @@
     eggPlace();
   }
   function eggExplode(){
+    eggSpent = false;                                 // 爆完就重新"可用"：下次双击还能再放一只
     if(!eggW) return;
     const cx = eggW.x + EGG_W / 2, cy = eggW.y + EGG_H / 2;   // 小人的中心
     eggWhale.hidden = true;
@@ -4666,16 +4667,21 @@
 
   // 双击"小肥鱼"：先崩两下，再把小人放出来（之后它自己蹦，时间无限）
   eggFish.addEventListener('dblclick', e => {
-    if(eggSpent) return;                              // 已经用过一次，之后点它没有任何反应
+    if(eggSpent) return;                              // 已经放出来还没爆：先不重复放第二只
     eggSpent = true; e.preventDefault();
     eggFish.classList.add('crack');
     setTimeout(() => {
       eggFish.classList.remove('crack');
+      if(!eggSpent || mode !== 'about') return;       // 字还没崩完就离场了：这次就不放了
       const r = eggFish.getBoundingClientRect();       // 就从这三个字的位置蹦出来
       eggW = {x:r.left - 14, y:r.top - 26, vx:0, vy:-340, onGround:false, st:'air',
         dir:1, mir:1, sx:1, sy:1, stretch:0, t:0, wait:0, hv:0, jump:0, dirFrom:1};
       eggAlive = true;
       eggWhale.hidden = false;
+      // 同一只元素第二次出场：把 CSS 出场弹跳清掉再重挂一次，动画才会重新播
+      eggWhaleSide.style.animation = 'none';
+      void eggWhaleSide.offsetWidth;
+      eggWhaleSide.style.animation = '';
       eggPlace();                                     // 初始朝向：原图（朝左）
       eggTick.prev = 0;
       if(!eggRaf) eggRaf = requestAnimationFrame(eggTick);
