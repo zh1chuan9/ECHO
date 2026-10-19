@@ -363,6 +363,7 @@
     /* 挑战模式：吸积弧、吸力虚线、螺旋碎屑、危险脉动与碎裂坠落一并停掉 */
     .orb-spin,.orb-dot,.hole-pull,.hole-mote{animation:none}
     .start-arrow path,.start-arrow line{animation:none;stroke-dashoffset:0}
+    .fwarn{animation:none;opacity:1}
     .danger.on{animation:none;opacity:.4}
     .crumble.fall .slab-f,.crumble.fall .edge{animation:none;opacity:.22}
     /* 拾取球的呼吸浮动、拾取火花、冲刺残影与速度线也一并停掉（火花仍会短暂闪一下再被回收） */
@@ -808,6 +809,16 @@
   .fire-tail{stroke:rgba(255,138,58,.5);stroke-width:7;stroke-linecap:round;opacity:.75}
   .fire-shell{fill:#ff8a3a;stroke:#ffd9a8;stroke-width:2}
   .fire-core{fill:#fff4dd}
+  /* 火球预警：贴右边缘的红色感叹号（屏幕空间）。一颗火球一个，由 JS 塞进 #fireWarn 容器里；
+     高度按各自火球线路摆。出现时"闪两下"—— 下面这组 keyframes 正好两次明灭，
+     闪完那颗火球才飞出来（时长由 JS 按 CHAL.fireWarn 同步） */
+  .fwarn-wrap{position:fixed;inset:0;z-index:6;pointer-events:none}
+  .fwarn{position:fixed;right:3.4vw;
+    font:900 clamp(44px,5.6vw,78px)/1 "Arial Black",Impact,sans-serif;
+    color:#ff4141;text-shadow:0 0 10px rgba(255,60,60,.9),0 0 30px rgba(255,40,40,.55);
+    transform:translateY(-50%);animation:fwarnBlink .9s linear both}
+  @keyframes fwarnBlink{
+    0%{opacity:0}10%{opacity:1}32%{opacity:.06}54%{opacity:1}74%{opacity:.06}100%{opacity:1}}
   /* 逼近提示：屏幕四边向内压的暗红 */
   .danger{position:fixed;inset:0;z-index:24;pointer-events:none;opacity:0;
     transition:opacity .3s ease;
@@ -1317,6 +1328,10 @@
     <span class="cdown-num" id="cdownN">3</span>
     <span class="cdown-tip">准备</span>
   </div>
+
+  <!-- 火球预警：右边缘的红色感叹号。一颗火球配一个 —— 这里是个空容器，由 JS 按需塞进去；
+       每个出场时闪两下，闪完它那颗火球才真的飞出来。高度就是那颗火球的"线路"高度，看一眼就知道往哪跳 -->
+  <div class="fwarn-wrap" id="fireWarn"></div>
 
   <div class="vignette"></div>
   <div class="grain"></div>
@@ -3185,8 +3200,12 @@
     // 火球：跑到 fireStart 米之后才开火，此后每隔一小段时间从画面右侧飞来一小排，
     // 高度贴近地面、只能靠跳过去，碰到即死。它按规则保持自己的固定速度（提速只给黑洞与主角）——
     // 这很关键：火球的速度若也乘倍率，加上主角变快，它掠过屏幕的时间会缩到 0.3 秒以内，变成"看到就死"
-    fireStart:1000, fireGap:4.8, fireGapX:320, fireN:2,          // 间隔拉远：一小排更稀、排与排之间也更久
-    fireV:380, fireR:15, fireY:664, fireYJit:18, fireBob:6,      // 飞得更慢，给玩家更从容的起跳窗口
+    fireStart:1000, fireGap:5.5,                       // 排与排之间隔多久（再乘 0.7~1.5 的随机）
+    fireN0:1, fireNGrow:900, fireNMax:4,               // 起步只有一颗，每 900 米 +1，封顶 4 —— 由少到多逐步上强度
+    fireDt:.95,                                        // 同一排里两颗火球的"见面间隔"（秒）：节奏恒定，永远够落地再起跳
+    fireWarn:.9,                                       // 起手预警：右边缘的红色感叹号闪两下的时长
+    fireV:380, fireR:15, fireBob:6,                    // 飞得慢，给玩家从容的起跳窗口
+    fireY:656, fireYJit:38,                            // 每颗火球各占一条 y（656~694）：有的贴地、有的偏高
     // 黑洞：一个圆（圆心锁在世界中线、半径 270 —— 下缘正好切到地面线，所以主角能到的
     // 每个高度都还在视界里，不可能从上下绕过去），只沿 x 轴推进
     holeR:270, holeCy:WORLD_H / 2, holeV:280, holeLeash:1250,
@@ -3828,16 +3847,54 @@
                     ph:Math.random() * 6.3, el:g, key:''});
   }
 
+  // 这一排该来几颗：起步只有一颗，跑得越远越多（每 fireNGrow 米 +1，封顶 fireNMax）
+  function fireWaveN(){
+    const grow = Math.max(0, Math.floor((distOf() - CHAL.fireStart) / CHAL.fireNGrow));
+    return Math.min(CHAL.fireNMax, CHAL.fireN0 + grow);
+  }
+
+  // 预警的红色感叹号：一颗火球配一个。贴右边缘、摆在它那条线的高度上，出场时"闪两下"
+  function showFireWarn(y){
+    const wrap = document.getElementById('fireWarn');
+    if(!wrap) return null;
+    const el = document.createElement('span');
+    el.className = 'fwarn';
+    el.textContent = '!';
+    el.style.top = (y / WORLD_H * 100).toFixed(1) + '%';  // 高度对齐它那颗火球的线路
+    el.style.animationDuration = CHAL.fireWarn + 's';     // 闪两下的时长 = 这颗火球起飞前的预警时长
+    wrap.appendChild(el);
+    return el;                                            // 交还给对应的火球，等它飞出来的那一刻收回
+  }
+  function clearFireWarns(){
+    const wrap = document.getElementById('fireWarn');
+    if(wrap) wrap.textContent = '';                       // 收掉所有还在闪的感叹号
+  }
+
   function updateFire(dt){
     const c = chal;
     if(distOf() >= CHAL.fireStart){                     // 只跑够里程才开火，之前安安静静
-      c.fireT -= dt;
+      if(c.fireT > 0) c.fireT -= dt;
+      // 每颗火球都是独立的一"波"：各自倒计时 —— 先亮自己的那个感叹号、闪两下，闪完才从右边缘飞出来。
+      // 所以"几颗火球就有几个感叹号"，一个感叹号只预告一颗火球
+      for(let i = c.fireQ.length - 1; i >= 0; i--){
+        const q = c.fireQ[i];
+        q.delay -= dt;
+        if(!q.warn && q.delay <= CHAL.fireWarn) q.warn = showFireWarn(q.y);
+        if(q.delay <= 0){
+          spawnFire(camX + viewW() + 70, q.y);          // 从右边缘飞入
+          if(q.warn) q.warn.remove();                   // 火球出来了，它的感叹号功成身退
+          c.fireQ.splice(i, 1);
+        }
+      }
       if(c.fireT <= 0){
-        c.fireT = CHAL.fireGap * (.7 + Math.random() * .8);          // 随机间隔，免得节奏可被背下来
-        const n = CHAL.fireN + Math.min(2, Math.floor(obTierOf() / 3));   // 档位越高，一小排里的火球越多（上限也压低，别堆成火墙）
-        const right = camX + viewW() + 70;
+        c.fireT = CHAL.fireGap * (.7 + Math.random() * .8);            // 随机间隔，免得节奏可被背下来
+        const n = fireWaveN();
+        // 相邻两颗的"起飞时刻"固定隔 fireDt 秒，且都从镜头右边缘出发，
+        // 于是它们的相遇间隔恒为 fireDt —— 主角越跑越快，两颗之间的世界间距就越拉越大，
+        // 永远来得及落地再起跳，不会出现"跳过一颗、第二颗已经贴脸"的死区
         for(let i = 0; i < n; i++)
-          spawnFire(right + i * CHAL.fireGapX, CHAL.fireY + Math.random() * CHAL.fireYJit);
+          c.fireQ.push({delay:CHAL.fireWarn + i * CHAL.fireDt,
+                        y:CHAL.fireY + Math.random() * CHAL.fireYJit, warn:null});  // 每颗各占一条 y
       }
     }
     for(const f of c.fire){
@@ -4182,7 +4239,7 @@
             goldOn:false,
             dashT:0, dashCd:0, boostT:0, orbT:0, hook:null, frozen:false, frozenOrb:null, over:false,
             dying:false, deathT:0, why:'',
-            fire:[], fireT:CHAL.fireGap,                     // 火球：跑到 CHAL.fireStart 米才开始生成
+            fire:[], fireQ:[], fireT:CHAL.fireGap,           // 火球：跑到 CHAL.fireStart 米才开始生成；fireQ 是"已排好队、还没起飞"的那些
             holeX:-420, maxX:0, startX:0, hudKey:'', ropeKey:''};   // 黑洞从画面左外起步
     chalOn = true;
     chalSegs = []; lastSeg = ''; chalGenX = 0; chalWorldW = 0; holeEl = null;
@@ -4198,6 +4255,7 @@
     gProps.textContent = ''; gRubble.textContent = ''; gFx.textContent = '';
     gPlayer.textContent = ''; gHole.textContent = ''; gFire.textContent = '';
     gPick.textContent = ''; gSpark.textContent = '';     // 拾取球与短命火花层也要清空
+    clearFireWarns();                                   // 上一局可能残留的预警感叹号也收掉
     rects = []; cpEls = []; goalEl = null; gateEl = null; stoneEl = null;
 
     // 起始平台：站上去就能开跑，前方立刻是第一段随机地形
@@ -4285,6 +4343,7 @@
     // 收尾：抓钩、黄球、拾取球、黑洞、火球的元素一并清掉，回标题或进剧情关卡都不会留下挑战模式的残影
     gRope.textContent = ''; gOrbs.textContent = ''; gHole.textContent = '';
     gFire.textContent = ''; c.fire = [];                       // 还在飞的火球也一并收掉
+    clearFireWarns(); c.fireQ = [];                            // 预警的感叹号、还没起飞的排期，一并收掉
     gPick.textContent = ''; c.picks = [];
     gSpark.textContent = ''; c.tmp = [];                       // 还没演完的拾取火花与冲刺残影也收掉
     gFx.textContent = ''; fxP = []; fxRing = null; fxT = 0; fxTmax = 1.25;   // 爆炸粒子也收掉
